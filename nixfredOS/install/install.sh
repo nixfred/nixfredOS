@@ -42,6 +42,19 @@
 # ═══════════════════════════════════════════════════════════════════
 set -euo pipefail
 
+# ─── Flags ────────────────────────────────────────────────────────
+#   --check     preflight only: report what is present/missing, install nothing
+#   --dry-run   walk the install and print what would change (same as DRY_RUN=1)
+CHECK_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --check)   CHECK_ONLY=1 ;;
+    --dry-run) DRY_RUN=1 ;;
+    -h|--help) printf 'Usage: install.sh [--check] [--dry-run]\n  --check    preflight report only, installs nothing\n  --dry-run  show what the install would do without changing anything\n'; exit 0 ;;
+    *) printf 'Unknown option: %s (try --help)\n' "$arg" >&2; exit 2 ;;
+  esac
+done
+
 # ─── Release resolution — always the latest published release ─────
 # No pin: this resolves the newest GitHub Release at run time, so every new
 # release reaches every installer with zero edits here. Override with
@@ -58,7 +71,7 @@ set -euo pipefail
 # (public issue #1694). Corrected to the newest published release.
 # Repo owner/name is parameterized — set at publish time, never hard-coded here.
 NIXFREDOS_REPO="${NIXFREDOS_REPO:-nixfred/nixfredOS}"
-NIXFREDOS_FALLBACK_TAG="v1.0.0"
+NIXFREDOS_FALLBACK_TAG="v1.1.0"
 if [ -n "${NIXFREDOS_VERSION:-}" ]; then
   NIXFREDOS_TAG="v${NIXFREDOS_VERSION}"
 elif [ -z "${NIXFREDOS_TAG:-}" ]; then
@@ -129,6 +142,43 @@ printf "\n  ${BLUE}━━━━━━━━━━━━━━━━━━━━�
 printf "  ${BOLD}${DARK_BLUE}nix${BLUE}fred${LIGHT_BLUE}OS${RESET}   ${BOLD}your AI operating system${RESET}      ${DIM}current state ${BLUE}→${DIM} ideal state${RESET}   ${DIM}·${RESET}   ${LIGHT_BLUE}v%s bootstrap${RESET}\n" "$NIXFREDOS_VERSION"
 printf "  ${LIGHT_BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n\n"
 [ "$DRY_RUN" = "1" ] && warn "DRY-RUN mode — no changes will be made."
+
+# ─── --check: preflight report, then exit without installing ─────
+if [ "$CHECK_ONLY" = "1" ]; then
+  step "Preflight check (nothing will be installed)"
+  MISSING=0
+  have() { command -v "$1" >/dev/null 2>&1; }
+  case "$(uname -s)" in
+    Darwin)
+      mv_="$(sw_vers -productVersion 2>/dev/null || echo 0)"
+      if [ "${mv_%%.*}" -ge 13 ] 2>/dev/null; then success "macOS $mv_"; else error "macOS 13+ required (found $mv_)"; MISSING=1; fi ;;
+    Linux) success "Linux ($(uname -r))" ;;
+    *) warn "Unsupported OS: $(uname -s)" ;;
+  esac
+  printf "\n  ${BOLD}Required${RESET}\n"
+  for t in git curl bash tar; do
+    if have "$t"; then success "$t"; else error "$t missing"; MISSING=1; fi
+  done
+  if have bun; then
+    bv="$(bun --version 2>/dev/null | head -n1)"; bmaj="${bv%%.*}"; bmin="${bv#*.}"; bmin="${bmin%%.*}"
+    if [ "${bmaj:-0}" -gt 1 ] 2>/dev/null || { [ "${bmaj:-0}" -eq 1 ] && [ "${bmin:-0}" -ge 2 ]; } 2>/dev/null; then success "bun $bv"
+    else error "bun $bv is older than 1.2 (curl -fsSL https://bun.sh/install | bash)"; MISSING=1; fi
+  else error "bun missing (curl -fsSL https://bun.sh/install | bash)"; MISSING=1; fi
+  if have gh; then
+    if gh auth status >/dev/null 2>&1; then success "gh (logged in)"; else warn "gh installed but not logged in (run: gh auth login)"; fi
+  else
+    error "gh missing (macOS: brew install gh · Arch: pacman -S github-cli · Debian/Ubuntu: apt install gh · Fedora: dnf install gh)"; MISSING=1
+  fi
+  harness=""
+  for h in claude cursor-agent cursor cline codex gemini; do have "$h" && harness="$harness $h"; done
+  if [ -n "$harness" ]; then success "AI harness:$harness"; else error "No AI coding harness found (Claude Code recommended)"; MISSING=1; fi
+  printf "\n  ${BOLD}Optional${RESET}\n"
+  if have ollama; then success "ollama (semantic memory recall available)"; else info "ollama not found: keyword recall only (https://ollama.com)"; fi
+  if [ -n "${ELEVENLABS_API_KEY:-}" ]; then success "ELEVENLABS_API_KEY set (voice available)"; else info "ELEVENLABS_API_KEY not set: voice off"; fi
+  printf "\n  ${DIM}Docker is never required.${RESET}\n\n"
+  if [ "$MISSING" = "0" ]; then success "Ready to install nixfredOS $NIXFREDOS_TAG."; exit 0
+  else error "Install the missing items above, then re-run."; exit 1; fi
+fi
 
 # ─── Step 1: Prereqs ─────────────────────────────────────────────
 step "1/6  Checking prerequisites"

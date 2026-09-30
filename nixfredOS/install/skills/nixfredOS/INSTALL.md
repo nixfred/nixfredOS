@@ -38,10 +38,32 @@ Do not begin a partial install you can't finish.
 
 ### 1. Prerequisites
 
-- **bun** runs the install tools (they're TypeScript). Check `bun --version`. If it's missing, install it and re-check:
-  - macOS / Linux: `curl -fsSL https://bun.sh/install | bash`
-  - Windows: `powershell -c "irm bun.sh/install.ps1 | iex"`
-- **git** and a network connection, to fetch the release. (Or use a local release directory if your human already has one.)
+Run the preflight first. It changes nothing, it only reports:
+
+```
+curl -fsSL https://raw.githubusercontent.com/nixfred/nixfredOS/main/nixfredOS/install/install.sh | bash -s -- --check
+```
+
+**Required**
+
+| Need | Why | Get it |
+|---|---|---|
+| macOS 13+ or a modern Linux (Arch, Debian/Ubuntu, Fedora) | supported platforms | |
+| `git`, `curl` | fetch the release, version your brain | macOS: `xcode-select --install` · Linux: your package manager |
+| `bun` 1.2+ | runs the TypeScript tools and hooks | `curl -fsSL https://bun.sh/install \| bash` |
+| `gh` (GitHub CLI) + a GitHub account | creates and backs up your **private** brain repo (step 8.7) | macOS: `brew install gh` · Arch: `sudo pacman -S github-cli` · Debian/Ubuntu: `sudo apt install gh` · Fedora: `sudo dnf install gh` |
+| An AI coding harness | the engine nixfredOS drives | **Claude Code recommended** (paid plan); Cursor, Cline, Codex, Gemini CLI also work |
+
+**Optional**
+
+| Extra | What it adds |
+|---|---|
+| [Ollama](https://ollama.com) (native app, no Docker) | semantic, meaning-based memory recall. Apple Silicon or a GPU helps. |
+| ElevenLabs API key | spoken responses (voice) |
+
+**Never required:** Docker, a cloud account, telemetry. Nothing in nixfredOS runs in a container.
+
+If bun is missing, install it and re-check: `curl -fsSL https://bun.sh/install | bash` (Windows: `powershell -c "irm bun.sh/install.ps1 | iex"`).
 
 ### 2. Get the release and detect the environment
 
@@ -149,6 +171,49 @@ It prints one line per capability — live ✅, broken ❌ (each with its own co
 
 Deeper walkthroughs per tool (what it's for, install, auth, verify it's live): `GETTING-STARTED.md`, shipped next to this file. Your human can re-run the doctor any time something feels off: `nixfredos doctor` territory — it's the same command.
 
+### 8.6 The memory engine — your AI remembers (WITH PERMISSION)
+
+nixfredOS ships Larry's memory engine (LMF4.1) **with an empty memory**. Nothing about anyone else comes with it; your assistant builds its own memory about your human, on their disk.
+
+What it adds: `~/.claude/memory.db` (SQLite + FTS5), 7 hooks (SessionExtract, AssociativeRecall, RememberTrigger, MagnitudeCapture, PreCompact, PostCompact, StopFailure), the `mem` CLI, the `nixfredos-memory` MCP server, `~/.claude/MEMORY/AUTO/` seeded with 3 obviously fake examples, and 4-hour catch-up/backup timers (launchd on macOS, systemd on Linux). No Docker.
+
+Show your human that list, then with a yes:
+
+```
+cd <skillRoot>/install/memory-engine && ./install
+mem search "test"          # should answer "No results found." on a fresh install
+```
+
+Then offer the optional semantic layer **only if Ollama is present** (`command -v ollama`): `ollama pull nomic-embed-text && mem embed backfill`. Without Ollama, keyword recall works fine; say so and move on.
+
+Teach your human the one habit that matters: saying **"remember X"** makes you write a memory file that same turn. Details: `install/memory-engine/README.md` and `install/memory-engine/docs/LRMS.md`.
+
+### 8.7 The private brain repo — GitHub backup of `~/.claude` (WITH PERMISSION)
+
+Your human's memory, settings and history must be backed up to a **PRIVATE** GitHub repo. Walk them through it; never skip the privacy checks.
+
+1. **gh present?** `gh --version`. If missing, install it (show the command, wait for a yes):
+   - macOS: `brew install gh` (if Homebrew is missing, send them to https://brew.sh first)
+   - Arch: `sudo pacman -S github-cli` · Debian/Ubuntu: `sudo apt install gh` · Fedora: `sudo dnf install gh`
+2. **Log in — the human types, not you.** Ask them to run `gh auth login` themselves (in Claude Code: `! gh auth login`), choosing GitHub.com, HTTPS, and browser login. Confirm with `gh auth status`. Never ask for, paste, or store a token yourself.
+3. **Pick a name.** Suggest `<assistant-name>-brain` (for example `nova-brain`). Get their GitHub login with `gh api user -q .login`.
+4. **Create it PRIVATE:** `gh repo create <login>/<name>-brain --private --description "Private AI brain backup"`.
+5. **Verify before any push.** Run `gh repo view <login>/<name>-brain --json visibility -q .visibility`. It MUST print `PRIVATE`. If it prints anything else, **stop**, tell your human, and do not push.
+6. **Protect secrets first.** In `~/.claude`, create `.gitignore` with at least: `.env`, `*.key`, `*.pem`, `credentials*`, `secrets/`, `.credentials.json`, `node_modules/`, `*.log`. Show it to your human.
+7. **First commit:**
+   ```
+   cd ~/.claude && git init -b main   # skip if already a repo
+   git remote add origin https://github.com/<login>/<name>-brain.git
+   git remote -v                      # read the URL out loud to your human
+   git add -A && git status --short   # show what will be committed; scan for secrets
+   git commit -m "init: <name> brain"
+   gh repo view <login>/<name>-brain --json visibility -q .visibility   # re-check: PRIVATE
+   git push -u origin main
+   ```
+8. Point the memory engine's backup at it too, if they want session transcripts backed up: `cd ~/.claude/conversations-backup && git remote add origin <another private repo URL>` (same PRIVATE check first).
+
+**Hard rule:** never push `~/.claude` (or any memory) to a repo whose visibility is not `PRIVATE`. Re-check visibility before every first push to a new remote.
+
 ### 9. Run Setup, then Interview
 
 Run the **Setup** workflow (`Workflows/Setup.md`) to finish integration and verify with real evidence, then the **Interview** workflow (`Workflows/Interview.md`): name the assistant, capture identity and TELOS (current state → ideal state), pull in any sources your human offers, and seed Pulse. By the end, the config tree is populated and Pulse shows real data.
@@ -172,4 +237,5 @@ Full-doctrine features additionally depend on the external tools in step 8.5 (co
 - **Permission before every mutation.** Show the exact change; back up `settings.json` before editing it; wait for a yes. One documented exception: the `install.sh` bootstrap, by invocation, migrates stale pre-7.x launch aliases (rc backed up first; skip with `NIXFREDOS_SKIP_ALIAS=1`) and appends capture rules to the config-root `.gitignore` — running the bootstrap is the consent for those two bounded setup mutations. AI-led setup steps after the bootstrap always ask.
 - **Never write a harness's config that it won't read.** Honest degrade beats an inert install.
 - **The launch command loads the constitution — don't skip it.** A plain `claude` session gets CLAUDE.md but not `NIXFREDOS_SYSTEM_PROMPT.md`. The `nixfredos` command (step 7), or the harness's system-prompt flag, is what turns the operating contract on. Wire it, or the install is missing its whole constitutional layer.
+- **Memory goes to PRIVATE repos only.** Verify `gh repo view <repo> --json visibility` prints `PRIVATE` before the first push of `~/.claude` or any memory. Anything else: stop and tell your human.
 - **Refuse to run inside the nixfredOS source repo** (detected via source-repo markers). Never mutate a maintainer's live system.
