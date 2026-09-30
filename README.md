@@ -47,6 +47,7 @@ It walks the setup and asks before it touches anything on your machine. You need
 | **Skills** | 56 bundled skills: research, security, writing, art, first principles, red teaming and more |
 | **Hooks** | 56 lifecycle hooks: security guards, integrity checks, context loading, learning capture |
 | **Pulse** | Local dashboard and observability for what your AI is doing |
+| **Status line** | Neon 5-line cockpit: context, git, memory, plan pace (banked, never dollars), local GPU and weather. Adapts to pane size |
 | **Learning** | Ratings and outcomes feed back so the system improves itself |
 
 Browse the skills in [`nixfredOS/install/skills/`](nixfredOS/install/skills/) and the hooks in [`nixfredOS/install/hooks/`](nixfredOS/install/hooks/).
