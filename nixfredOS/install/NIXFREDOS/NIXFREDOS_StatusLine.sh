@@ -102,6 +102,7 @@ else MODE="compact"; fi
 
 # ── identity ────────────────────────────────────────────────────────────────
 ai_name=$(jq -r '.daidentity.displayName // .daidentity.name // "AI"' "$SETTINGS_FILE" 2>/dev/null)
+ai_name=${ai_name:-AI}
 host=$(hostname -s 2>/dev/null || hostname)
 wordmark="${B}${CY}nix${VI}fred${MG}OS${R}"
 ident="${TX}${B}$(printf '%s' "$ai_name" | tr '[:lower:]' '[:upper:]')${R}${DIM}:${R}${MU}${host}${R}"
@@ -148,7 +149,7 @@ if [ "$(age "$HOOKS_CACHE")" -gt 300 ] && [ -f "$SETTINGS_FILE" ]; then
     done <<<"$(jq -r '[.hooks[]?[]?.hooks[]?.command] | unique | .[]' "$SETTINGS_FILE" 2>/dev/null)"
     echo "$okc $total" > "$HOOKS_CACHE"
 fi
-read -r hooks_ok hooks_total < "$HOOKS_CACHE" 2>/dev/null
+read -r hooks_ok hooks_total 2>/dev/null < "$HOOKS_CACHE"
 hooks_seg=""
 if [ "${hooks_total:-0}" -gt 0 ]; then
     if [ "$hooks_ok" -eq "$hooks_total" ]; then hooks_seg="${OK}⛨${R} ${MU}hooks${R} ${OK}${hooks_ok}/${hooks_total}${R}"
@@ -175,7 +176,7 @@ if [ "$(age "$MEM_CACHE")" -gt 60 ] && [ -f "$MEMORY_DB" ] && command -v sqlite3
         (select count(*) from loa_entries), (select count(*) from decisions), (select count(*) from learnings)" \
         2>/dev/null > "$MEM_CACHE.tmp" && mv "$MEM_CACHE.tmp" "$MEM_CACHE"
 fi
-read -r m_sess m_dec m_learn < "$MEM_CACHE" 2>/dev/null
+read -r m_sess m_dec m_learn 2>/dev/null < "$MEM_CACHE"
 mem_seg=""
 if [ -n "$m_sess" ]; then
     mem_seg="${MG}◎${R} ${TX}$(commas "$m_sess")${R} ${MU}sessions${R} ${DIM}·${R} ${TX}$(commas "$m_dec")${R} ${MU}decisions${R} ${DIM}·${R} ${TX}$(commas "$m_learn")${R} ${MU}learnings${R}"
@@ -256,7 +257,7 @@ if [ "$(age "$GPU_CACHE")" -gt 20 ]; then
     fi
     echo "$g" > "$GPU_CACHE"
 fi
-IFS='|' read -r g_up g_model g_vram < "$GPU_CACHE" 2>/dev/null
+IFS='|' read -r g_up g_model g_vram 2>/dev/null < "$GPU_CACHE"
 gpu_seg=""
 if [ -n "$g_up" ]; then
     if [ "$g_up" = "up" ]; then gpu_seg="${OK}▣${R} ${MU}ollama${R}"; else gpu_seg="${DIM}▣ ollama off${R}"; fi
@@ -285,7 +286,7 @@ if [ "$NIXFREDOS_SL_WEATHER" != "off" ]; then
     fi
     city=$(jq -r '.city // empty' "$LOC" 2>/dev/null)
     abbr=$(printf '%s' "$city" | tr -cd '[:alpha:]' | cut -c1-3 | tr '[:lower:]' '[:upper:]')
-    IFS='|' read -r w_t w_code w_th w_tl w_rain < "$WX" 2>/dev/null
+    IFS='|' read -r w_t w_code w_th w_tl w_rain 2>/dev/null < "$WX"
     hr=$(date +%H); hr=${hr#0}
     case "$w_code" in
         0) icon=$([ "$hr" -ge 6 ] && [ "$hr" -lt 20 ] && echo "☀" || echo "☾") ;;
@@ -324,8 +325,8 @@ case "$MODE" in
         fi
         printf '%s\n' "$(join "$wordmark" "$ident" "$model_seg" "$ctx_seg" "$sess_seg" "$extra_sess")"
         printf '%s\n' "$(join "$git_seg" "$extra_code" "$cwd_seg" "$algo_seg" "$hooks_seg")"
-        printf '%s\n' "$(join "$mem_seg" "$recall_seg" "$rating_seg")"
+        l3=$(join "$mem_seg" "$recall_seg" "$rating_seg"); [ -n "$l3" ] && printf '%s\n' "$l3"
         [ -n "$plan_seg" ] && printf '%s\n' "$plan_seg"
-        printf '%s\n' "$(join "$wx_seg" "$gpu_seg" "$extra_env" "$voice_seg")"
+        l5=$(join "$wx_seg" "$gpu_seg" "$extra_env" "$voice_seg"); [ -n "$l5" ] && printf '%s\n' "$l5"
         ;;
 esac
