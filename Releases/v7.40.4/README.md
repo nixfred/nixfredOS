@@ -1,6 +1,6 @@
 <img src="art/release-art.png" width="820">
 
-# LifeOS 7.40.4 — The Receipts Release
+# nixfredOS 7.40.4 — The Receipts Release
 
 **Thirteen days, 61 substantive changes, 30 community fixes, and one theme: the system now proves what it claims.**
 
@@ -40,7 +40,7 @@ The Pulse dashboard's static export is now actually in the release. Every prior 
 ## Cortex, and the rest of the new machinery
 
 - Cortex consolidation. The memory system's skills merged into one, with a weekly Distill pass that compresses accumulated knowledge before it silts up.
-- Helm ships self-contained. The LifeOS terminal (kitty config layer, installer, app wrapper) now lives inside the release, with its installer hardened through three rounds of destructive-edge review.
+- Helm ships self-contained. The nixfredOS terminal (kitty config layer, installer, app wrapper) now lives inside the release, with its installer hardened through three rounds of destructive-edge review.
 - New skills: Novelty (evolutionary explanation-discovery for hard problems), SecurityMarketData (curated cybersecurity market intelligence), Vitals (macOS performance diagnostics), Share (self-hosted file sharing), and DetectAI grew deterministic statistical signals plus keyless watermark and steganography scanning.
 - Hermes gained a zero-token heartbeat: calendar, mail, and queue ticks every ten minutes as pre-run scripts, so the sidecar stays current without burning a single model call.
 - Vulnerability management now cross-references CISA KEV with a page-now override, and a new advisory ComplexityRatchet meter flags complexity drift on every edit without ever blocking one.

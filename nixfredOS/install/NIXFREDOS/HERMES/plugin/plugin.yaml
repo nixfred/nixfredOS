@@ -1,0 +1,10 @@
+name: nixfredos
+version: 1.0.0
+description: >-
+  nixfredOS sidecar guard. Blocks credential material at the tool-call boundary so
+  the agent can be given a full nixfredOS mount — identity, TELOS, memory,
+  projects, skills — without exposing secrets to the model's context.
+author: nixfredOS
+hooks:
+  - pre_tool_call
+  - transform_tool_result

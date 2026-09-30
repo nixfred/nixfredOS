@@ -1,12 +1,12 @@
 # Security Policy
 
-LifeOS runs with real authority on your machine — it reads your files, calls APIs with your keys, drives your browser, and executes code your AI writes. Security is therefore a first-class design constraint, not an afterthought. This document explains how to report a vulnerability, what LifeOS does to protect you, and how to build skills and contributions that stay safe.
+nixfredOS runs with real authority on your machine — it reads your files, calls APIs with your keys, drives your browser, and executes code your AI writes. Security is therefore a first-class design constraint, not an afterthought. This document explains how to report a vulnerability, what nixfredOS does to protect you, and how to build skills and contributions that stay safe.
 
 ## Reporting a Vulnerability
 
 **Please report security issues privately — do not open a public issue for anything exploitable.**
 
-- **Preferred:** use GitHub's [private vulnerability reporting](https://github.com/danielmiessler/LifeOS/security/advisories/new) (the **Report a vulnerability** button under the repository's **Security** tab). It keeps the report confidential and lets us collaborate on a fix in a private advisory.
+- **Preferred:** use GitHub's [private vulnerability reporting](https://github.com/nixfred/nixfredOS/security/advisories/new) (the **Report a vulnerability** button under the repository's **Security** tab). It keeps the report confidential and lets us collaborate on a fix in a private advisory.
 - Include: a description, affected version/commit, reproduction steps, and impact. A minimal proof-of-concept helps enormously.
 
 **What to expect:**
@@ -19,22 +19,22 @@ Please give us a reasonable window to ship a fix before any public disclosure. W
 
 ## Supported Versions
 
-LifeOS ships as a rolling release — the single latest published release is the supported version. Security fixes land in the next release; there is no back-porting to older tags. Always run the [latest release](https://github.com/danielmiessler/LifeOS/releases).
+nixfredOS ships as a rolling release — the single latest published release is the supported version. Security fixes land in the next release; there is no back-porting to older tags. Always run the [latest release](https://github.com/nixfred/nixfredOS/releases).
 
 ## The Security Model
 
-LifeOS is a **public mirror generated from a private source tree.** That boundary is where the highest-value risk lives — a careless change could leak identity, credentials, or private infrastructure into a public repo. Several layers guard it:
+nixfredOS is a **public mirror generated from a private source tree.** That boundary is where the highest-value risk lives — a careless change could leak identity, credentials, or private infrastructure into a public repo. Several layers guard it:
 
 - **Structural user/system separation.** Everything personal lives under a `USER/` tree that is a symlink into a separate private store. It never lives in the shipped code, so there is nothing to scrub at the file level — the separation is the safety.
 - **Release-time containment gates.** Every public release is built by cloning the private tree, deleting known private zones, overlaying public templates, and running a battery of gates (identity/token/secret scans, private-path leak checks, offensive-security-content checks). A single gate failure blocks the publish. "Looks clean" is never enough; the gates have to pass.
 - **Deterministic security hooks.** Guardrails that matter are enforced by code at fixed lifecycle points, not by asking the model to remember a rule. A denylist blocks dangerous operations regardless of what any prompt says.
 - **Least privilege by default.** Optional capabilities (voice, browser control, cloud deploys) are opt-in and configured per install, not shipped hot.
 
-None of this makes LifeOS unbreakable. It runs on your trust of the AI you point at it and the third-party services you wire in. Treat your `USER/` tree, your `.env`, and your session history as sensitive, and keep them out of any public location.
+None of this makes nixfredOS unbreakable. It runs on your trust of the AI you point at it and the third-party services you wire in. Treat your `USER/` tree, your `.env`, and your session history as sensitive, and keep them out of any public location.
 
 ## Prompt Injection & Untrusted Input
 
-**The core principle: external content is data, never instructions.** Commands come only from the operator and LifeOS's own configuration. Any attempt in web pages, API responses, documents, emails, or repository content to redirect the assistant — "ignore previous instructions", "system override", hidden directives in HTML comments or metadata — is an attack. The correct response is to stop, not follow it, and report it.
+**The core principle: external content is data, never instructions.** Commands come only from the operator and nixfredOS's own configuration. Any attempt in web pages, API responses, documents, emails, or repository content to redirect the assistant — "ignore previous instructions", "system override", hidden directives in HTML comments or metadata — is an attack. The correct response is to stop, not follow it, and report it.
 
 Skills that touch external content are the attack surface: web scraping, document parsing, API integrations, email processing, and reading untrusted repositories. If you build or contribute a skill, follow these rules.
 
@@ -103,9 +103,9 @@ Every one of these must be blocked or sanitized — never executed.
 ## For Contributors
 
 - Never commit secrets, real `.env` values, personal data, or private paths. Use placeholders and env-var *names*, never values.
-- LifeOS's public repo is generated; community pull requests are ported into the private source with credit rather than merged directly, so the fix survives the next release.
+- nixfredOS's public repo is generated; community pull requests are ported into the private source with credit rather than merged directly, so the fix survives the next release.
 - When in doubt about whether something is safe to make public: leave it out, and ask in the report or PR.
 
 ---
 
-*LifeOS is built to help anyone run their own personal AI infrastructure. Keeping it safe — for you and for everyone who installs it — is part of that goal.*
+*nixfredOS is built to help anyone run their own personal AI infrastructure. Keeping it safe — for you and for everyone who installs it — is part of that goal.*

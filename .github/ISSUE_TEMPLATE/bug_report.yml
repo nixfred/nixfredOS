@@ -12,8 +12,8 @@ body:
     id: version
     attributes:
       label: Version
-      description: LifeOS version, plus the component version when the defect lives in one.
-      placeholder: LifeOS 7.40.4 / Cortex
+      description: nixfredOS version, plus the component version when the defect lives in one.
+      placeholder: nixfredOS 7.40.4 / Cortex
     validations:
       required: true
   - type: textarea
@@ -28,7 +28,7 @@ body:
     attributes:
       label: Where (file:line)
       description: The line the defect lives on. Add the reader and the writer when the two disagree.
-      placeholder: LIFEOS/TOOLS/CortexHealth.ts:206
+      placeholder: NIXFREDOS/TOOLS/CortexHealth.ts:206
     validations:
       required: true
   - type: textarea

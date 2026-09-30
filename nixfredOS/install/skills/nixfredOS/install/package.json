@@ -1,0 +1,9 @@
+{
+  "name": "nixfredos-runtime",
+  "private": true,
+  "type": "module",
+  "description": "Shared runtime dependencies for nixfredOS hooks and NIXFREDOS/TOOLS scripts. Deployed to <configRoot>/package.json by DeployCore.ts so `bun install` resolves node_modules for both <configRoot>/hooks/ and <configRoot>/NIXFREDOS/.",
+  "dependencies": {
+    "yaml": "^2.8.2"
+  }
+}

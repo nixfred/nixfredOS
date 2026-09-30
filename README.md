@@ -1,6 +1,6 @@
 <p align="center">
   <br />
-  <img src="./images/lifeos-logo-full.png" alt="LifeOS" width="460">
+  <img src="./images/nixfredos-logo-full.png" alt="nixfredOS" width="460">
   <br />
 </p>
 
@@ -8,23 +8,23 @@
 
 **The AI-Powered Life Operating System**
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=24&pause=1000&color=8B5CF6&center=true&vCenter=true&width=600&lines=Your+Life+Operating+System;Current+State+%E2%86%92+Ideal+State;Open+source.+Free.+Forever.)](https://github.com/danielmiessler/LifeOS)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=24&pause=1000&color=8B5CF6&center=true&vCenter=true&width=600&lines=Your+Life+Operating+System;Current+State+%E2%86%92+Ideal+State;Open+source.+Free.+Forever.)](https://github.com/nixfred/nixfredOS)
 
-[![Stars](https://img.shields.io/github/stars/danielmiessler/LifeOS?style=flat&logo=github&logoColor=white&label=Stars&color=FFB000&cacheSeconds=1800)](https://github.com/danielmiessler/LifeOS/stargazers)
-[![Forks](https://img.shields.io/github/forks/danielmiessler/LifeOS?style=flat&logo=github&logoColor=white&label=Forks&color=6366F1)](https://github.com/danielmiessler/LifeOS/network/members)
-[![Last Commit](https://img.shields.io/github/last-commit/danielmiessler/LifeOS?style=flat&logo=git&logoColor=white&label=Updated&color=F97316)](https://github.com/danielmiessler/LifeOS/commits/main)
-[![Contributors](https://img.shields.io/github/contributors/danielmiessler/LifeOS?style=flat&logo=githubsponsors&logoColor=white&label=Contributors&color=EC4899)](https://github.com/danielmiessler/LifeOS/graphs/contributors)
+[![Stars](https://img.shields.io/github/stars/nixfred/nixfredOS?style=flat&logo=github&logoColor=white&label=Stars&color=FFB000&cacheSeconds=1800)](https://github.com/nixfred/nixfredOS/stargazers)
+[![Forks](https://img.shields.io/github/forks/nixfred/nixfredOS?style=flat&logo=github&logoColor=white&label=Forks&color=6366F1)](https://github.com/nixfred/nixfredOS/network/members)
+[![Last Commit](https://img.shields.io/github/last-commit/nixfred/nixfredOS?style=flat&logo=git&logoColor=white&label=Updated&color=F97316)](https://github.com/nixfred/nixfredOS/commits/main)
+[![Contributors](https://img.shields.io/github/contributors/nixfred/nixfredOS?style=flat&logo=githubsponsors&logoColor=white&label=Contributors&color=EC4899)](https://github.com/nixfred/nixfredOS/graphs/contributors)
 
-[![Release](https://img.shields.io/github/v/release/danielmiessler/LifeOS?style=flat&logo=github&label=Release&color=22C55E)](https://github.com/danielmiessler/LifeOS/releases)
-[![License](https://img.shields.io/github/license/danielmiessler/LifeOS?style=flat&label=License&color=60A5FA)](./LICENSE)
+[![Release](https://img.shields.io/github/v/release/nixfred/nixfredOS?style=flat&logo=github&label=Release&color=22C55E)](https://github.com/nixfred/nixfredOS/releases)
+[![License](https://img.shields.io/github/license/nixfred/nixfredOS?style=flat&label=License&color=60A5FA)](./LICENSE)
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude-D4A574?style=flat&logo=anthropic&logoColor=white)](https://claude.ai/code)
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-14151A?style=flat&logo=bun&logoColor=white)](https://bun.sh)
-[![Pulse](https://img.shields.io/badge/Pulse-included-06B6D4?style=flat&logo=activitypub&logoColor=white)](https://ourlifeos.ai)
-[![Community](https://img.shields.io/badge/Community-Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/danielmiessler)
+[![Pulse](https://img.shields.io/badge/Pulse-included-06B6D4?style=flat&logo=activitypub&logoColor=white)](https://ournixfredos.ai)
+[![Community](https://img.shields.io/badge/Community-Discord-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/nixfred)
 
-**[Website](https://ourlifeos.ai)** · **[Install](#install)** · **[Walkthrough](https://youtu.be/Le0DLrn7ta0)** · **[Docs](https://docs.ourlifeos.ai)** · **[Releases](https://github.com/danielmiessler/LifeOS/releases)**
+**[Website](https://ournixfredos.ai)** · **[Install](#install)** · **[Walkthrough](https://youtu.be/Le0DLrn7ta0)** · **[Docs](https://docs.ournixfredos.ai)** · **[Releases](https://github.com/nixfred/nixfredOS/releases)**
 
 </div>
 
@@ -32,7 +32,7 @@
 
 https://github.com/user-attachments/assets/329897f5-828b-4c23-b607-1cf9c71cb4ec
 
-**LifeOS** is a General Purpose AI Harness for doing anything you want to do in life and work with AI. It captures who you are, what you care about, and where you're trying to go, then uses AI that knows you to help you get there. 
+**nixfredOS** is a General Purpose AI Harness for doing anything you want to do in life and work with AI. It captures who you are, what you care about, and where you're trying to go, then uses AI that knows you to help you get there. 
 
 And because it has your full context, it makes everything you do more efficient and effective, from building apps, to starting a business, to creative projects…_basically anything_.
 
@@ -41,20 +41,20 @@ And because it has your full context, it makes everything you do more efficient 
 
 <div align="center">
 
-### ⭐ If LifeOS is useful to you, star the repo
+### ⭐ If nixfredOS is useful to you, star the repo
 
 Stars help more people find the project and keep it moving. It takes one click.
 
-[![Star LifeOS on GitHub](https://img.shields.io/github/stars/danielmiessler/LifeOS?style=for-the-badge&logo=github&logoColor=white&label=Star%20LifeOS&color=8B5CF6)](https://github.com/danielmiessler/LifeOS)
+[![Star nixfredOS on GitHub](https://img.shields.io/github/stars/nixfred/nixfredOS?style=for-the-badge&logo=github&logoColor=white&label=Star%20nixfredOS&color=8B5CF6)](https://github.com/nixfred/nixfredOS)
 
 </div>
 
 ## Install
 
-**Give it to your AI.** LifeOS is installed *by* an AI, so the install is just a prompt. Paste this into your AI coding harness — Claude Code, Cursor, Codex, Hermes, or any capable agent — and it does the whole setup for you:
+**Give it to your AI.** nixfredOS is installed *by* an AI, so the install is just a prompt. Paste this into your AI coding harness — Claude Code, Cursor, Codex, Hermes, or any capable agent — and it does the whole setup for you:
 
 ```
-Read https://ourlifeos.ai/install and install LifeOS for me.
+Read https://ournixfredos.ai/install and install nixfredOS for me.
 ```
 
 Your AI reads the install page and walks the setup, asking permission before it touches anything.
@@ -62,32 +62,32 @@ Your AI reads the install page and walks the setup, asking permission before it 
 **Prefer the terminal?** There's a one-line shortcut for Claude Code on macOS/Linux:
 
 ```bash
-curl -fsSL https://ourlifeos.ai/install.sh | bash
+curl -fsSL https://ournixfredos.ai/install.sh | bash
 ```
 
 Either path needs a capable AI coding harness — we build and run on [Claude Code](https://docs.claude.com/claude-code) — and [bun](https://bun.sh).
 
 ## Core Components
 
-**The unique features** — the parts you won't find anywhere else. Anything a good harness already provides on its own (built-in subagents, for example) isn't listed; this is only what LifeOS adds. See them live and click through on **[ourlifeos.ai](https://ourlifeos.ai)**.
+**The unique features** — the parts you won't find anywhere else. Anything a good harness already provides on its own (built-in subagents, for example) isn't listed; this is only what nixfredOS adds. See them live and click through on **[ournixfredos.ai](https://ournixfredos.ai)**.
 
-<a href="https://ourlifeos.ai"><img src="images/lifeos-core-components.png" width="100%" alt="LifeOS core components — Current→Ideal State, Intent Engineering, General Hill Climbing, Euphoric Surprise, TELOS, the Algorithm, Arbol, Bunker, the ISA System, Cortex, Synapse, Atlas, Ledger, the Skill System, the Hook System, Pulse, Voice, Learning, Security, the Hermes Sidecar, Custom Spinner Verbs, and Custom Tooltips. Click to explore them live on ourlifeos.ai." /></a>
+<a href="https://ournixfredos.ai"><img src="images/nixfredos-core-components.png" width="100%" alt="nixfredOS core components — Current→Ideal State, Intent Engineering, General Hill Climbing, Euphoric Surprise, TELOS, the Algorithm, Arbol, Bunker, the ISA System, Cortex, Synapse, Atlas, Ledger, the Skill System, the Hook System, Pulse, Voice, Learning, Security, the Hermes Sidecar, Custom Spinner Verbs, and Custom Tooltips. Click to explore them live on ournixfredos.ai." /></a>
 
 ---
 
 ## 🧩 Skills
 
-LifeOS installs as one self-contained skill that bundles the whole library — research, security, writing, art, and more. Browse them all on the site.
+nixfredOS installs as one self-contained skill that bundles the whole library — research, security, writing, art, and more. Browse them all on the site.
 
-**[Browse all skills →](https://ourlifeos.ai/skills)**
+**[Browse all skills →](https://ournixfredos.ai/skills)**
 
 ---
 
 ## ❓ FAQ
 
-### How is LifeOS different from using an AI harness on its own?
+### How is nixfredOS different from using an AI harness on its own?
 
-Your harness gives you raw capability. LifeOS is the layer on top that makes it *yours* — a system that knows your goals, people, and context, and keeps working toward them:
+Your harness gives you raw capability. nixfredOS is the layer on top that makes it *yours* — a system that knows your goals, people, and context, and keeps working toward them:
 
 - **Persistent memory** — Your DA remembers past sessions, decisions, and learnings
 - **Custom skills** — Specialized capabilities for the things you do most
@@ -95,19 +95,19 @@ Your harness gives you raw capability. LifeOS is the layer on top that makes it 
 - **Intelligent routing** — Say "research this" and the right workflow triggers automatically
 - **Self-improvement** — The system modifies itself based on what it learns
 
-Your harness is the engine. LifeOS is everything else that makes it *your* car.
+Your harness is the engine. nixfredOS is everything else that makes it *your* car.
 
-### What harness does LifeOS run on?
+### What harness does nixfredOS run on?
 
-Any high-end one. LifeOS is harness-agnostic by design — it's built on universal primitives (hooks, skills, context files, agentic routing), not one vendor's features. The code is TypeScript and Bash, and the core ideas — TELOS, the Algorithm, skills, memory — port to any capable agent.
+Any high-end one. nixfredOS is harness-agnostic by design — it's built on universal primitives (hooks, skills, context files, agentic routing), not one vendor's features. The code is TypeScript and Bash, and the core ideas — TELOS, the Algorithm, skills, memory — port to any capable agent.
 
-Daniel builds and runs it on [Claude Code](https://docs.claude.com/claude-code), so that's the most-tested path today. But LifeOS isn't locked to it, and it's designed to run wherever your AI does.
+nixfred builds and runs it on [Claude Code](https://docs.claude.com/claude-code), so that's the most-tested path today. But nixfredOS isn't locked to it, and it's designed to run wherever your AI does.
 
 ### How is this different from fabric?
 
 [Fabric](https://github.com/danielmiessler/fabric) is a collection of AI prompts (patterns) for specific tasks. It's focused on *what to ask AI*.
 
-LifeOS is infrastructure for *how your DA operates*—memory, skills, routing, context, self-improvement. They're complementary. Many LifeOS users integrate Fabric patterns into their skills.
+nixfredOS is infrastructure for *how your DA operates*—memory, skills, routing, context, self-improvement. They're complementary. Many nixfredOS users integrate Fabric patterns into their skills.
 
 ### What if I break something?
 
@@ -127,9 +127,9 @@ Recovery is straightforward:
 
 | Feature | Description |
 |---------|-------------|
-| **Local Model Support** | Run LifeOS with local models (Ollama, llama.cpp) for privacy and cost control |
+| **Local Model Support** | Run nixfredOS with local models (Ollama, llama.cpp) for privacy and cost control |
 | **Granular Model Routing** | Route different tasks to different models based on complexity |
-| **Remote Access** | Access your LifeOS from anywhere—mobile, web, other devices |
+| **Remote Access** | Access your nixfredOS from anywhere—mobile, web, other devices |
 | **Outbound Phone Calling** | Voice capabilities for outbound calls |
 | **External Notifications** | Robust notification system for Email, Discord, Telegram, Slack |
 
@@ -137,20 +137,20 @@ Recovery is straightforward:
 
 ## 🌐 Community
 
-**GitHub Discussions:** [Join the conversation](https://github.com/danielmiessler/LifeOS/discussions)
+**GitHub Discussions:** [Join the conversation](https://github.com/nixfred/nixfredOS/discussions)
 
-**Community Discord:** LifeOS is discussed in the [community Discord](https://danielmiessler.com/upgrade) along with other AI projects
+**Community Discord:** nixfredOS is discussed in the [community Discord](https://nixfred.com/upgrade) along with other AI projects
 
-**Twitter/X:** [@danielmiessler](https://twitter.com/danielmiessler)
+**Twitter/X:** [@nixfred](https://twitter.com/nixfred)
 
-**Blog:** [danielmiessler.com](https://danielmiessler.com)
+**Blog:** [nixfred.com](https://nixfred.com)
 
 ### Star History
 
 <!-- Self-hosted chart: star-history.com's embed API 500s on repos this size
      (10s timeout re-fetching ~17K stargazers per render). Regenerate at release:
-     bun LIFEOS/TOOLS/GenerateStarHistory.ts danielmiessler/LifeOS images/star-history.svg -->
-<a href="https://star-history.com/#danielmiessler/LifeOS&Date">
+     bun NIXFREDOS/TOOLS/GenerateStarHistory.ts nixfred/nixfredOS images/star-history.svg -->
+<a href="https://star-history.com/#nixfred/nixfredOS&Date">
  <img alt="Star History Chart" src="./images/star-history.svg" width="800" />
 </a>
 
@@ -158,7 +158,7 @@ Recovery is straightforward:
 
 ## 🤝 Contributing
 
-We welcome contributions! See our [GitHub Issues](https://github.com/danielmiessler/LifeOS/issues) for open tasks.
+We welcome contributions! See our [GitHub Issues](https://github.com/nixfred/nixfredOS/issues) for open tasks.
 
 1. **Fork the repository**
 2. **Make your changes** — Bug fixes, new skills, documentation improvements
@@ -177,11 +177,11 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 **Anthropic and the Claude Code team** — First and foremost. You are moving AI further and faster than anyone right now. Claude Code is the foundation that makes all of this possible.
 
-**[IndyDevDan](https://www.youtube.com/@indydevdan)** — For great videos on meta-prompting and custom agents that have inspired parts of LifeOS.
+**[IndyDevDan](https://www.youtube.com/@indydevdan)** — For great videos on meta-prompting and custom agents that have inspired parts of nixfredOS.
 
 ### Contributors
 
-LifeOS is built in the open, and the community's pull requests, forensic bug reports, and fresh-install writeups directly shape every release. The public repo is generated from a private source tree, so community PRs are ported into source with credit rather than merged directly — same fix, durable across releases.
+nixfredOS is built in the open, and the community's pull requests, forensic bug reports, and fresh-install writeups directly shape every release. The public repo is generated from a private source tree, so community PRs are ported into source with credit rather than merged directly — same fix, durable across releases.
 
 <p align="center">
 <a href="https://github.com/alexfry-axeai"><img src="https://avatars.githubusercontent.com/u/308327483?v=4&s=64" width="48" height="48" alt="alexfry-axeai" title="alexfry-axeai"></a>
@@ -194,7 +194,7 @@ LifeOS is built in the open, and the community's pull requests, forensic bug rep
 <a href="https://github.com/bytebyrobert"><img src="https://avatars.githubusercontent.com/u/32384729?v=4&s=64" width="48" height="48" alt="bytebyrobert" title="bytebyrobert"></a>
 <a href="https://github.com/christauff"><img src="https://avatars.githubusercontent.com/u/1050379?v=4&s=64" width="48" height="48" alt="christauff" title="christauff"></a>
 <a href="https://github.com/dactylmedia"><img src="https://avatars.githubusercontent.com/u/148711391?v=4&s=64" width="48" height="48" alt="dactylmedia" title="dactylmedia"></a>
-<a href="https://github.com/danielmiessler"><img src="https://avatars.githubusercontent.com/u/50654?v=4&s=64" width="48" height="48" alt="danielmiessler" title="danielmiessler"></a>
+<a href="https://github.com/nixfred"><img src="https://avatars.githubusercontent.com/u/50654?v=4&s=64" width="48" height="48" alt="nixfred" title="nixfred"></a>
 <a href="https://github.com/Drizzt321"><img src="https://avatars.githubusercontent.com/u/15825517?v=4&s=64" width="48" height="48" alt="Drizzt321" title="Drizzt321"></a>
 <a href="https://github.com/dsather"><img src="https://avatars.githubusercontent.com/u/22476669?v=4&s=64" width="48" height="48" alt="dsather" title="dsather"></a>
 <a href="https://github.com/ebrett"><img src="https://avatars.githubusercontent.com/u/6605?v=4&s=64" width="48" height="48" alt="ebrett" title="ebrett"></a>
@@ -247,7 +247,7 @@ LifeOS is built in the open, and the community's pull requests, forensic bug rep
 <a href="https://github.com/xmasyx"><img src="https://avatars.githubusercontent.com/u/16624475?v=4&s=64" width="48" height="48" alt="xmasyx" title="xmasyx"></a>
 </p>
 
-<sup>The 28 highest-commit contributors — [see all on the contributors graph](https://github.com/danielmiessler/LifeOS/graphs/contributors). Avatars are committers only, so the lists below carry everyone the graph can't see.</sup>
+<sup>The 28 highest-commit contributors — [see all on the contributors graph](https://github.com/nixfred/nixfredOS/graphs/contributors). Avatars are committers only, so the lists below carry everyone the graph can't see.</sup>
 
 **[fayerman-source](https://github.com/fayerman-source)** — Google Cloud TTS provider integration and Linux audio support for the voice system.
 
@@ -267,9 +267,9 @@ badosanjos · benoitdepaire · bnkath2o · brycemagera · catchingknives · DAES
 
 <div align="center">
 
-<a href="https://github.com/sponsors/danielmiessler"><img src="https://img.shields.io/badge/Sponsor-❤️-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="Sponsor"></a>
+<a href="https://github.com/sponsors/nixfred"><img src="https://img.shields.io/badge/Sponsor-❤️-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="Sponsor"></a>
 
-**LifeOS is free and open-source forever. If you find it valuable, you can [sponsor the project](https://github.com/sponsors/danielmiessler).**
+**nixfredOS is free and open-source forever. If you find it valuable, you can [sponsor the project](https://github.com/sponsors/nixfred).**
 
 </div>
 
@@ -277,9 +277,9 @@ badosanjos · benoitdepaire · bnkath2o · brycemagera · catchingknives · DAES
 
 ## 📚 Related Reading
 
-- [The Real Internet of Things](https://danielmiessler.com/blog/the-real-internet-of-things) — The vision behind LifeOS
-- [AI's Predictable Path: 7 Components](https://danielmiessler.com/blog/ai-predictable-path-7-components-2024) — Visual walkthrough of where AI is heading
-- [Building a Personal AI Infrastructure](https://danielmiessler.com/blog/personal-ai-infrastructure) — Full walkthrough with examples
+- [The Real Internet of Things](https://nixfred.com/blog/the-real-internet-of-things) — The vision behind nixfredOS
+- [AI's Predictable Path: 7 Components](https://nixfred.com/blog/ai-predictable-path-7-components-2024) — Visual walkthrough of where AI is heading
+- [Building a Personal AI Infrastructure](https://nixfred.com/blog/personal-ai-infrastructure) — Full walkthrough with examples
 
 ---
 
@@ -290,18 +290,18 @@ badosanjos · benoitdepaire · bnkath2o · brycemagera · catchingknives · DAES
 
 **v7.28.3 — Cortex, Hermes, and hardened releases**
 - **Cortex** — the memory system, named: hot-layer memory, a typed Knowledge Archive (People, Companies, Ideas, Research), learnings, and work history, consolidated across sessions so each one starts smarter than the last.
-- **Hermes sidecar** — an optional second front door: talk to your LifeOS as an agent from a terminal, with the same constitution, identity, and skills. One brain, another way in.
+- **Hermes sidecar** — an optional second front door: talk to your nixfredOS as an agent from a terminal, with the same constitution, identity, and skills. One brain, another way in.
 - **Named subsystems** — Synapse (the input router), Conduit and Feed (the internal and external senses), Atlas (the live asset graph), and Ledger (change tracking), each a product within the product.
 - **Release-security hardening** — three new deterministic gates (sanitizer-residue, licensed-font, dead-legacy-doc-pointer); previously-shipped commercially licensed fonts removed.
-- [Full release notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Full release notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v7.1.1 — Install Awareness**
-- **Doctor** — `bun LIFEOS/TOOLS/Doctor.ts` reports the real state of every optional capability (live, broken, declined, stale) and reconciles hooks on disk against what's registered.
+- **Doctor** — `bun NIXFREDOS/TOOLS/Doctor.ts` reports the real state of every optional capability (live, broken, declined, stale) and reconciles hooks on disk against what's registered.
 - **Capability-aware install** — the installer asks now/later/never per optional capability and records the choice; failure-aware nudges surface the exact fix command when a broken capability trips.
 - **System Health in Pulse** — capability states, fix commands, and heartbeats on the hooks page.
 - **Algorithm v8.4.0** — plain-language depth steering registers before a run opens; nudges bounded to a single line.
 - **Community fixes** — #1450, #1456, #1463, #1470, #1471. Thanks to the contributors.
-- [Full release notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Full release notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v7.0.0 — The Bitter Pill Release**
 - **Bitter Pill Engineering** — scaffolding cut across the whole system on one test: would a smarter model make this rule unnecessary? Reasoning choreography, self-scores, and duplicated routing are gone; the verification kernel stays.
@@ -309,27 +309,27 @@ badosanjos · benoitdepaire · bnkath2o · brycemagera · catchingknives · DAES
 - **Modes and tiers retired** — one adaptive response format and one Algorithm loop that scales spend to what the work reveals, discovered not predicted.
 - **The Algorithm v8.3.0** — the ISA is both the hill and the instrument; claims close only on tool evidence, and a single deterministic AlgorithmNudge layer keeps a run on track.
 - **Hook layer consolidated** — ~16 hooks folded into per-event dispatchers, plus community fixes for a work-events race, DA-name de-hardcoding, and config-driven identity.
-- [Full release notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Full release notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v6.0.3 (2026-07-04) — Comprehensive AI-native install**
 - Comprehensive component menu — INSTALL.md lays out the full two-tier model: Core plus à-la-carte enhancements (hooks, statusline, tooltips, spinner verbs, agents, Pulse, background jobs)
-- The `lifeos` launch alias wires `--append-system-prompt-file` so the constitutional layer actually loads
-- One canonical INSTALL.md rendered at ourlifeos.ai/install for humans and AIs
-- [Full release notes](https://github.com/danielmiessler/LifeOS/releases)
+- The `nixfredos` launch alias wires `--append-system-prompt-file` so the constitutional layer actually loads
+- One canonical INSTALL.md rendered at ournixfredos.ai/install for humans and AIs
+- [Full release notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v6.0.2 (2026-07-03) — .md-first AI-native install**
 - Skill-only distribution with an AI-native, `.md`-first install
-- The shipped install.sh pins v6.0.2 and points at danielmiessler/LifeOS
-- [Full release notes](https://github.com/danielmiessler/LifeOS/releases)
+- The shipped install.sh pins v6.0.2 and points at nixfred/nixfredOS
+- [Full release notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v6.0.0 (2026-07-02) — One Skill, One Install**
-- **Skill-based distribution** — the whole system now ships as a single self-contained skill (`LifeOS/`): the orchestrator (SKILL.md + Workflows + Tools) plus a complete install payload (system prompt, Algorithm, 49 skills, hooks, agents, Pulse, statusline, USER + MEMORY scaffolds). One directory, one install.
-- **First release under the LifeOS name** — the project was PAI (Personal AI Infrastructure); this is the same system, renamed.
-- **Install by prompt** — hand it to your AI (*"Read https://ourlifeos.ai/install and install LifeOS for me"*); a `curl … | bash` shortcut lays it down from a terminal too.
+- **Skill-based distribution** — the whole system now ships as a single self-contained skill (`nixfredOS/`): the orchestrator (SKILL.md + Workflows + Tools) plus a complete install payload (system prompt, Algorithm, 49 skills, hooks, agents, Pulse, statusline, USER + MEMORY scaffolds). One directory, one install.
+- **First release under the nixfredOS name** — the project was PAI (Personal AI Infrastructure); this is the same system, renamed.
+- **Install by prompt** — hand it to your AI (*"Read https://ournixfredos.ai/install and install nixfredOS for me"*); a `curl … | bash` shortcut lays it down from a terminal too.
 - **Full Pulse on first boot** — the installer stands up the Life Dashboard and menu-bar app, ships generic TELOS templates so the dashboard renders on a fresh install, and runs the setup interview to seed it.
 - **Algorithm v6.23.0** — Current State → Ideal State across seven phases, classifier-driven mode + tier, cross-vendor verification at E4/E5.
 - **Clean by construction** — nothing personal ships; the USER tree is a blank template you populate. Release gates + a cross-vendor audit run before every publish.
-- [Full release notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Full release notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v5.0.0 (2026-04-30) — Life Operating System**
 - **Pulse** — unified daemon (port 31337): voice, hooks, observability, cron, Life Dashboard, wiki API, optional Telegram/iMessage bridges. Replaces every previous loose service.
@@ -338,23 +338,23 @@ badosanjos · benoitdepaire · bnkath2o · brycemagera · catchingknives · DAES
 - **ISA System** — Ideal State Artifact primitive. One document, twelve sections, five identities. Owned by the **ISA skill**.
 - **Containment + release tooling** — privacy is structural. Security gates run on every public release; two-stage release (stage → publish) never auto-chains.
 - **Memory v7.6** — structured by purpose: WORK, KNOWLEDGE (typed graph), LEARNING, RELATIONSHIP, OBSERVABILITY, STATE.
-- [Full release notes + migration guide](https://github.com/danielmiessler/LifeOS/releases)
+- [Full release notes + migration guide](https://github.com/nixfred/nixfredOS/releases)
 
 **v4.0.3 (2026-03-01) — Community PR Patch**
 - JSON array parsing fix in Inference.ts, 29 dead references removed, portability fixes, user context migration
-- [Release Notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Release Notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v4.0.0 (2026-02-27) — Lean and Mean**
 - 38 flat skill directories → 12 hierarchical categories, dead systems removed, CLAUDE.md template system, comprehensive security sanitization
-- [Release Notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Release Notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v3.0.0 (2026-02-15) — The Algorithm Matures**
 - Algorithm v1.4.0, persistent PRDs and parallel loop execution, full installer with GUI wizard, agent teams/swarm, voice personality system
-- [Release Notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Release Notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v2.4.0 (2026-01-23) — The Algorithm**
 - Universal problem-solving system with ISC tracking, Euphoric Surprise as the outcome metric
-- [Release Notes](https://github.com/danielmiessler/LifeOS/releases)
+- [Release Notes](https://github.com/nixfred/nixfredOS/releases)
 
 **v2.0.0 (2025-12-28) — v2 Launch**
 - Modular architecture with independent skills, Claude Code native design
@@ -365,7 +365,7 @@ badosanjos · benoitdepaire · bnkath2o · brycemagera · catchingknives · DAES
 
 <div align="center">
 
-**Built with ❤️ by [Daniel Miessler](https://danielmiessler.com) and the LifeOS community**
+**Built with ❤️ by [nixfred](https://nixfred.com) and the nixfredOS community**
 
 *Augment yourself.*
 

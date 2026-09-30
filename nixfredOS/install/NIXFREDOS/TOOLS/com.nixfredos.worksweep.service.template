@@ -1,0 +1,29 @@
+# com.nixfredos.worksweep.service.template — Source template (Linux, systemd --user).
+# Install via:
+#   bun ~/.claude/NIXFREDOS/TOOLS/InstallWorkSweep.ts
+#
+# The installer reads $HOME and `which bun` at install time, substitutes the
+# {{HOME}}/{{BUN}}/{{BUN_DIR}} placeholders, writes the materialized unit to
+# ~/.config/systemd/user/, and enables it via systemctl --user. This template
+# stays clean of principal-specific paths so it ships in the public nixfredOS
+# release, mirroring the macOS com.nixfredos.worksweep.plist.template — same
+# cadence, same log target.
+#
+# Behavior: one-shot run of WorkSweep.ts, triggered by the paired timer unit
+# (com.nixfredos.worksweep.timer). stdout/stderr append to
+# MEMORY/STATE/com.nixfredos.worksweep.log, matching the launchd
+# StandardOutPath/StandardErrorPath.
+#
+# public PR #1692, @takanorinishida
+
+[Unit]
+Description=nixfredOS Work Sweep — periodic Work System capture (session catch-up, stale flagging, project checks, TELOS goals)
+
+[Service]
+Type=oneshot
+ExecStart={{BUN}} {{HOME}}/.claude/NIXFREDOS/TOOLS/WorkSweep.ts
+WorkingDirectory={{HOME}}/.claude
+Environment=HOME={{HOME}}
+Environment=PATH={{BUN_DIR}}:/usr/local/bin:/usr/bin:/bin
+StandardOutput=append:{{HOME}}/.claude/NIXFREDOS/MEMORY/STATE/com.nixfredos.worksweep.log
+StandardError=append:{{HOME}}/.claude/NIXFREDOS/MEMORY/STATE/com.nixfredos.worksweep.log
