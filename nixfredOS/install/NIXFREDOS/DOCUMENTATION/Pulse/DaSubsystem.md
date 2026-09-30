@@ -4,7 +4,7 @@ version: 1.1.5
 
 # nixfredOS Digital Assistant Subsystem
 
-> The DA is layer one of the Life OS (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the interface the principal actually talks to. This subsystem is what makes that layer real rather than a markdown file — identity that persists, a heartbeat that asks "should I do something to close the gap?", and growth that compounds. Everything below serves the thesis claim that the DA is the primary (eventually only) interface to the OS.
+> The DA is layer one of the nixfredOS (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the interface the principal actually talks to. This subsystem is what makes that layer real rather than a markdown file — identity that persists, a heartbeat that asks "should I do something to close the gap?", and growth that compounds. Everything below serves the thesis claim that the DA is the primary (eventually only) interface to the OS.
 
 **The DA subsystem formalizes how nixfredOS instantiates, manages, and evolves a Digital Assistant. It turns DA_IDENTITY from a flat markdown file into a living schema with interview-based creation, heartbeat-driven proactivity, natural-language scheduling, identity growth, and multi-DA awareness.**
 

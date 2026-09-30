@@ -4,7 +4,7 @@ version: 1.4.1
 
 # The Notification System
 
-> Voice is the Life OS speaking. Notifications close the loop's feedback edge: when the system advances the hill-climb (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`), the principal hears it without having to look.
+> Voice is the nixfredOS speaking. Notifications close the loop's feedback edge: when the system advances the hill-climb (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`), the principal hears it without having to look.
 
 **Voice notifications for nixfredOS workflows and task execution.**
 

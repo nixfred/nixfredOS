@@ -97,11 +97,11 @@ const NIXFREDOS_NAVY = rgb(30, 58, 138);     // dark navy (mid blocks)
 const NIXFREDOS_BRIGHT = rgb(37, 99, 235);   // bright blue (top cap)
 
 // nixfredOS wordmark — single source of truth for the header text, kept identical
-// to the status line (NIXFREDOS_StatusLine.sh: ${NIXFREDOS_P}Li${NIXFREDOS_A}fe${NIXFREDOS_I}OS).
-// Mixed-case, split Li/fe/OS across the same three blues. Every banner design uses
+// to the status line (NIXFREDOS_StatusLine.sh: ${NIXFREDOS_P}nix${NIXFREDOS_A}fred${NIXFREDOS_I}OS).
+// Mixed-case, split nix/fred/OS across the same three blues. Every banner design uses
 // this so the mark reads the same in the banner and the status line.
 const nixfredosWordmark = (): string =>
-  `${rgb(37, 99, 235)}Li${RESET}${rgb(59, 130, 246)}fe${RESET}${rgb(147, 197, 253)}OS${RESET}`;
+  `${rgb(37, 99, 235)}nix${RESET}${rgb(59, 130, 246)}fred${RESET}${rgb(147, 197, 253)}OS${RESET}`;
 
 // grid layout (cols L\u2192R, rows top\u2192bottom): a staircase climbing to the top-right
 //   row1:  .    .    .    BRIGHT

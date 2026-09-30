@@ -6,7 +6,7 @@ for (const __k of ["NIXFREDOS_DIR", "NIXFREDOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 }
 
 /**
- * UserIndex — Life OS USER/ indexer and Pulse module.
+ * UserIndex — nixfredOS USER/ indexer and Pulse module.
  *
  * Walks ~/.claude/NIXFREDOS/USER/, parses frontmatter + body of every .md file,
  * computes derived fields (staleness, completeness, item_count, preview),
@@ -684,7 +684,7 @@ async function cli(): Promise<void> {
     return
   }
 
-  console.log(`\n═══ Life OS Index ═══`)
+  console.log(`\n═══ nixfredOS Index ═══`)
   console.log(`Generated: ${index.generated_at}`)
   console.log(`Index written to: ${INDEX_PATH}`)
   console.log(`\nTotal files: ${index.stats.total_files}`)

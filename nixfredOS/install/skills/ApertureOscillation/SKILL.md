@@ -90,8 +90,8 @@ Tactical target: "Build a caching layer for session data"
 Strategic context: "nixfredOS is a Life OS that needs responsive, session-spanning AI assistance"
 
 Pass 1 (Narrow): Redis with TTL, standard session cache patterns
-Pass 2 (Wide): Cache must survive session boundaries, integrate with memory system, serve the Life OS vision
-Pass 3 (Synthesis): Tension — standard session cache expires data that the Life OS needs to persist. Resolution: hybrid cache with session-scoped fast layer + memory-backed persistent layer.
+Pass 2 (Wide): Cache must survive session boundaries, integrate with memory system, serve the nixfredOS vision
+Pass 3 (Synthesis): Tension — standard session cache expires data that the nixfredOS needs to persist. Resolution: hybrid cache with session-scoped fast layer + memory-backed persistent layer.
 ```
 
 **Example 2: Architecture decision**

@@ -6,7 +6,7 @@
   "casing": {
     "prose": "nixfredOS",
     "pascal_case_files": "nixfredOS",
-    "rule": "Prose/branding/UI always 'nixfredOS'. 'nixfredOS' only where the PascalCase file convention forces it (e.g. nixfredOSThesis.md). 'Life OS' (spaced) is retired."
+    "rule": "Prose/branding/UI always 'nixfredOS'. 'nixfredOS' only where the PascalCase file convention forces it (e.g. nixfredOSThesis.md). 'nixfredOS' (spaced) is retired."
   },
   "strata": {
     "historical": {

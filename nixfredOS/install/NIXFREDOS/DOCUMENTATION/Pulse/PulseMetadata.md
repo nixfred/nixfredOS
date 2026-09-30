@@ -15,7 +15,7 @@ version: 1.1.14
 
 ## Core Principle — Surface the Journey
 
-Every nixfredOS primitive is **current state → ideal state, articulated as ISCs, pursued through verifiable iteration**. This is the Life OS loop (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`) rendered at session scale. The Pulse metadata surface exists to make that journey legible at every level:
+Every nixfredOS primitive is **current state → ideal state, articulated as ISCs, pursued through verifiable iteration**. This is the nixfredOS loop (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`) rendered at session scale. The Pulse metadata surface exists to make that journey legible at every level:
 
 - **Where are we?** (current state, current phase, progress)
 - **Where are we going?** (ideal state, goal anchor, ISCs)

@@ -2,7 +2,7 @@
 version: 1.1.2
 ---
 
-# Life OS Schema
+# nixfredOS Schema
 
 > ## ⚠️ SUPERSEDED AS A LAYOUT SPEC — read this first
 >

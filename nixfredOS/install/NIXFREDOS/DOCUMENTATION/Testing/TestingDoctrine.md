@@ -9,7 +9,7 @@ version: 1.1.13
 
 # nixfredOS Testing Doctrine
 
-> Testing is how the Life OS knows what it knows (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb only counts when each step is verified, and `bun test` is the canonical probe behind every ISC claim. An unverified gap-closure is a guess wearing a checkmark.
+> Testing is how the nixfredOS knows what it knows (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb only counts when each step is verified, and `bun test` is the canonical probe behind every ISC claim. An unverified gap-closure is a guess wearing a checkmark.
 
 > **TL;DR.** Tests for nixfredOS run on `bun test`. The shared harness lives at `~/.claude/test/harness.ts` and exports zero-external-dep helpers (`paiTestEnv`, `tempDir`, `claudeFixture`, platform predicates, custom matchers). Tests live in a parallel `~/.claude/test/` tree that mirrors the source API surface — *not* co-located. Coverage is corpus-based: every documented hook, skill workflow, and tool surface gets at least one test file. No retries, no hardcoded ports, no time-based waits, no per-test timeouts. The ISA's `## Test Strategy` `tool: bun test path/to/foo.test.ts` is the canonical bridge from criterion to probe.
 

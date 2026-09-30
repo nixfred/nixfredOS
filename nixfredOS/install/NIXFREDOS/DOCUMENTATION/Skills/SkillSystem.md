@@ -9,7 +9,7 @@ version: 1.6.3
 
 # Custom Skill System
 
-> Skills are the Life OS's action surface. The thesis (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`) puts it directly: "Skills expand so the DA can take more actions to close the gap." Every skill added is a new class of move the DA can make in the current→ideal-state hill-climb; the structure rules below exist so those moves stay discoverable, composable, and safe to ship.
+> Skills are the nixfredOS's action surface. The thesis (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`) puts it directly: "Skills expand so the DA can take more actions to close the gap." Every skill added is a new class of move the DA can make in the current→ideal-state hill-climb; the structure rules below exist so those moves stay discoverable, composable, and safe to ship.
 
 **This document is the authoritative definition of the required structure for every nixfredOS skill; all skill creation — including CreateSkill's — conforms to it. "Canonicalize a skill" = restructure to match this exact format, including TitleCase naming. A skill that doesn't follow it is not properly configured and will not work correctly.**
 

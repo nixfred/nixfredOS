@@ -35,7 +35,7 @@ line:192.168.0.1
 # (shields.io badges, clone/discussion URLs, walkthrough links) and saturates
 # any owner-name term at whole-file scan granularity. Secrets/paths/hosts rules
 # and gitleaks still scan it; only the injected-terms rule is skipped here.
-# Approved by nixfred 2026-07-12 during the 7.1.1 publish; the leak-scan
+# Approved by Daniel 2026-07-12 during the 7.1.1 publish; the leak-scan
 # follow-up should replace this with an attribution-aware term rule.
 path:^README\.md$
 

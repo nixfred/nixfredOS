@@ -4,7 +4,7 @@ version: 1.9.4
 
 # nixfredOS Tools - CLI Utilities Reference
 
-> CLI-first is how the Life OS stays deterministic (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb's moves are code you can script, test, and trust — prompts orchestrate, code executes.
+> CLI-first is how the nixfredOS stays deterministic (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb's moves are code you can script, test, and trust — prompts orchestrate, code executes.
 
 This file documents single-purpose CLI utilities that have been consolidated from individual skills. These are pure command-line tools that wrap APIs or external commands.
 

@@ -126,7 +126,7 @@ sha256_of() {
 }
 
 printf "\n  ${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
-printf "  ${BOLD}${DARK_BLUE}Life${BLUE}O${LIGHT_BLUE}S${RESET}   ${BOLD}the Life Operating System${RESET}      ${DIM}current state ${BLUE}→${DIM} ideal state${RESET}   ${DIM}·${RESET}   ${LIGHT_BLUE}v%s bootstrap${RESET}\n" "$NIXFREDOS_VERSION"
+printf "  ${BOLD}${DARK_BLUE}nix${BLUE}fred${LIGHT_BLUE}OS${RESET}   ${BOLD}your AI operating system${RESET}      ${DIM}current state ${BLUE}→${DIM} ideal state${RESET}   ${DIM}·${RESET}   ${LIGHT_BLUE}v%s bootstrap${RESET}\n" "$NIXFREDOS_VERSION"
 printf "  ${LIGHT_BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n\n"
 [ "$DRY_RUN" = "1" ] && warn "DRY-RUN mode — no changes will be made."
 
@@ -402,7 +402,7 @@ shq() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
 migrate_rc() {
   local rc="$1" stale names n ts
   [ -f "$rc" ] || return 0
-  stale="$(grep -E '^[[:space:]]*alias[[:space:]]+(pai|kai|nixfredos)=' "$rc" 2>/dev/null \
+  stale="$(grep -E '^[[:space:]]*alias[[:space:]]+(pai|kai|lifeos|nixfredos)=' "$rc" 2>/dev/null \
     | grep -v 'NIXFREDOS_SYSTEM_PROMPT' \
     | grep -E '/PAI/|&&[[:space:]]*claude' || true)"
   [ -z "$stale" ] && return 0
@@ -413,7 +413,7 @@ migrate_rc() {
   cp "$rc" "$rc.nixfredos-backup-$ts"
   names="$(printf '%s\n' "$stale" | sed -E 's/^[[:space:]]*alias[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)=.*/\1/' | sort -u)"
   awk -v tag="$NIXFREDOS_TAG" '
-    /^[[:space:]]*alias[[:space:]]+(pai|kai|nixfredos)=/ && !/NIXFREDOS_SYSTEM_PROMPT/ && (/\/PAI\// || /&&[[:space:]]*claude/) {
+    /^[[:space:]]*alias[[:space:]]+(pai|kai|lifeos|nixfredos)=/ && !/NIXFREDOS_SYSTEM_PROMPT/ && (/\/PAI\// || /&&[[:space:]]*claude/) {
       print "# [migrated to nixfredOS " tag " — see .nixfredos-backup] " $0; next
     }
     { print }
@@ -443,7 +443,7 @@ if [ "${NIXFREDOS_SKIP_ALIAS:-0}" = "1" ]; then
 else
   FOUND_STALE=0
   for RC in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
-    if [ -f "$RC" ] && grep -E '^[[:space:]]*alias[[:space:]]+(pai|kai|nixfredos)=' "$RC" 2>/dev/null | grep -v 'NIXFREDOS_SYSTEM_PROMPT' | grep -qE '/PAI/|&&[[:space:]]*claude'; then FOUND_STALE=1; fi
+    if [ -f "$RC" ] && grep -E '^[[:space:]]*alias[[:space:]]+(pai|kai|lifeos|nixfredos)=' "$RC" 2>/dev/null | grep -v 'NIXFREDOS_SYSTEM_PROMPT' | grep -qE '/PAI/|&&[[:space:]]*claude'; then FOUND_STALE=1; fi
     migrate_rc "$RC"
   done
   [ "$FOUND_STALE" = "0" ] && success "No stale pre-7.x launch aliases found."

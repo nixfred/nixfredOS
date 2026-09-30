@@ -15,7 +15,7 @@ PLIST_LABEL="com.nixfredos.pulse-menubar"
 PLIST_SRC="$SCRIPT_DIR/com.nixfredos.pulse-menubar.plist"
 PLIST_DST="$HOME_DIR/Library/LaunchAgents/$PLIST_LABEL.plist"
 
-OLD_PLIST_LABEL="com.nixfredos.monitor-menubar"
+OLD_PLIST_LABEL="com.lifeos.monitor-menubar"
 OLD_PLIST_DST="$HOME_DIR/Library/LaunchAgents/$OLD_PLIST_LABEL.plist"
 
 echo "=== nixfredOS Pulse Menu Bar Installer ==="

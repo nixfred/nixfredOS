@@ -20,8 +20,8 @@ This file is the **routing table** — it tells you where everything lives. The 
 
 ## nixfredOS System (paths under `NIXFREDOS/DOCUMENTATION/` unless noted)
 
-- **Life OS thesis** — `nixfredOS/nixfredOSThesis.md` (canonical source of truth)
-- **Life OS schema** — `nixfredOS/nixfredOSSchema.md` (biography-flat, PascalCase, frontmatter contract)
+- **nixfredOS thesis** — `nixfredOS/nixfredOSThesis.md` (canonical source of truth)
+- **nixfredOS schema** — `nixfredOS/nixfredOSSchema.md` (biography-flat, PascalCase, frontmatter contract)
 - **System prompt** — `NIXFREDOS/NIXFREDOS_SYSTEM_PROMPT.md` (loaded via `--append-system-prompt-file`; home of the constitutional rules and response format)
 - **System architecture** — `nixfredOSSystemArchitecture.md` (master doc)
 - **Architecture summary** — `ARCHITECTURE_SUMMARY.md` (loaded via @-import)

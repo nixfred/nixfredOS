@@ -767,7 +767,7 @@ An **open-source framework** for augmenting humans using AI.
 - Markdown structure for order and priority
 - Chain of Thought and Chain of Draft strategies
 
-**Location:** github.com/nixfred/Fabric
+**Location:** github.com/danielmiessler/Fabric
 
 ## Native Fabric Patterns in nixfredOS
 

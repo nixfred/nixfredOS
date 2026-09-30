@@ -8,7 +8,7 @@ version: 1.2.7
 
 # System / User Boundary
 
-> This boundary is the thesis's deepest structural commitment (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): nixfredOS the OS is universal and public; the life it runs is singular and private. The four zones below are how one repo can be everyone's Life OS without ever containing anyone's life.
+> This boundary is the thesis's deepest structural commitment (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): nixfredOS the OS is universal and public; the life it runs is singular and private. The four zones below are how one repo can be everyone's nixfredOS without ever containing anyone's life.
 
 > The structural contract that makes the nixfredOS live tree publishable by construction rather than by scrub.
 

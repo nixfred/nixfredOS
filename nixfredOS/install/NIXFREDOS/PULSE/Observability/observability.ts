@@ -4583,7 +4583,7 @@ export async function handleObservabilityRequest(req: Request): Promise<Response
     if (pathname === "/api/telos/file") return handleTelosFileGet(url.searchParams)
     if (pathname === "/api/telos/overview") return handleTelosOverview()
 
-    // Life OS user-index (from Pulse/modules/user-index.ts)
+    // nixfredOS user-index (from Pulse/modules/user-index.ts)
     if (pathname === "/api/user-index") return handleUserIndexApi(url.searchParams.get("filter"))
     if (pathname === "/api/observability/life-card") return handleLifeCardApi()
 

@@ -4,7 +4,7 @@ version: 1.2.3
 
 # nixfredOS Containment Policy
 
-> Containment zones draw the Life OS boundary at release time (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the OS ships; the life never does.
+> Containment zones draw the nixfredOS boundary at release time (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the OS ships; the life never does.
 
 **Status:** Authoritative. Contributors and future DA sessions read this before adding a new file.
 **Enforcement:** two points. (1) The release pipeline's containment gates (G1-G14 + G17-G25, release-build time). (2) `hooks/SystemFileGuard.hook.ts` — a runtime PreToolUse Write/Edit gate that reads the same zone inventory (restored 2026-05-21 in Phase E of the system/user separation rebuild; it superseded the 2026-05-06 "release-build only" consolidation, which had removed the prospective `ContainmentGuard.hook.ts`).

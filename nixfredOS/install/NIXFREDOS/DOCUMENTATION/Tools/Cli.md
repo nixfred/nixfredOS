@@ -6,7 +6,7 @@ version: 1.2.1
 
 # nixfredOS Command-Line Tools
 
-> CLI-first is how the Life OS stays deterministic (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb's moves are code you can script, test, and trust — prompts orchestrate, code executes.
+> CLI-first is how the nixfredOS stays deterministic (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb's moves are code you can script, test, and trust — prompts orchestrate, code executes.
 
 nixfredOS provides the Arbol CLI for running actions and pipelines locally (runtime: `bun`).
 

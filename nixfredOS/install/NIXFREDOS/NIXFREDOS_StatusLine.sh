@@ -1610,7 +1610,7 @@ if [ "$MODE" != "normal" ]; then
     case "$MODE" in
         nano)
             # Line 1: branding + context
-            printf "${NIXFREDOS_A}${NIXFREDOS_LOGO}${RESET}  ${NIXFREDOS_P}Li${NIXFREDOS_A}fe${NIXFREDOS_I}OS${RESET} ${CTX_PRIMARY}◉${RESET}${_pct_color}${_raw_pct}%%${RESET}
+            printf "${NIXFREDOS_A}${NIXFREDOS_LOGO}${RESET}  ${NIXFREDOS_P}nix${NIXFREDOS_A}fred${NIXFREDOS_I}OS${RESET} ${CTX_PRIMARY}◉${RESET}${_pct_color}${_raw_pct}%%${RESET}
 "
             # Line 2: git + learning
             [ "$is_git_repo" = "true" ] && printf "${GIT_PRIMARY}◈${RESET}${GIT_VALUE}${branch}${RESET} "
@@ -1619,7 +1619,7 @@ if [ "$MODE" != "normal" ]; then
             ;;
         micro)
             # Line 1: branding + context
-            printf "${NIXFREDOS_A}${NIXFREDOS_LOGO}${RESET}  ${NIXFREDOS_P}Li${NIXFREDOS_A}fe${NIXFREDOS_I}OS${RESET} ${CTX_PRIMARY}◉${RESET}${_pct_color}${_raw_pct}%%${RESET}
+            printf "${NIXFREDOS_A}${NIXFREDOS_LOGO}${RESET}  ${NIXFREDOS_P}nix${NIXFREDOS_A}fred${NIXFREDOS_I}OS${RESET} ${CTX_PRIMARY}◉${RESET}${_pct_color}${_raw_pct}%%${RESET}
 "
             # Line 2: git + learning
             printf "${GIT_PRIMARY}◈${RESET}${GIT_VALUE}${branch:-—}${RESET}"
@@ -1632,7 +1632,7 @@ if [ "$MODE" != "normal" ]; then
             ;;
         mini)
             # Line 1: branding + location/time
-            printf "${SLATE_600}──${RESET} ${NIXFREDOS_A}${NIXFREDOS_LOGO}${RESET}  ${NIXFREDOS_P}Li${NIXFREDOS_A}fe${NIXFREDOS_I}OS${RESET} ${SLATE_600}──${RESET} ${NIXFREDOS_CITY}${location_city}${RESET} ${SLATE_600}│${RESET} ${NIXFREDOS_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${NIXFREDOS_WEATHER}${weather_str}${RESET}
+            printf "${SLATE_600}──${RESET} ${NIXFREDOS_A}${NIXFREDOS_LOGO}${RESET}  ${NIXFREDOS_P}nix${NIXFREDOS_A}fred${NIXFREDOS_I}OS${RESET} ${SLATE_600}──${RESET} ${NIXFREDOS_CITY}${location_city}${RESET} ${SLATE_600}│${RESET} ${NIXFREDOS_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${NIXFREDOS_WEATHER}${weather_str}${RESET}
 "
             # Line 2: context bar (compact)
             _bar_w=20
@@ -1674,13 +1674,13 @@ _hdr_loc_plain="${_hdr_loc_plain}${location_city}"
 _hdr_ascent=""
 [ -n "$ascent_chip" ] && _hdr_ascent=" ${SLATE_600}│${RESET} ${ascent_chip}"
 if [ -n "$session_display" ]; then
-    printf "${NIXFREDOS_P}Li${NIXFREDOS_A}fe${NIXFREDOS_I}OS${RESET} ${SLATE_600}│${RESET} ${_hdr_loc}  ${NIXFREDOS_TIME}${current_time}${RESET}  ${NIXFREDOS_WEATHER}${weather_str}${RESET} ${SLATE_600}│${RESET} ${NIXFREDOS_SESSION}${session_display}${RESET}${_hdr_ascent}\n"
+    printf "${NIXFREDOS_P}nix${NIXFREDOS_A}fred${NIXFREDOS_I}OS${RESET} ${SLATE_600}│${RESET} ${_hdr_loc}  ${NIXFREDOS_TIME}${current_time}${RESET}  ${NIXFREDOS_WEATHER}${weather_str}${RESET} ${SLATE_600}│${RESET} ${NIXFREDOS_SESSION}${session_display}${RESET}${_hdr_ascent}\n"
 else
     _hdr_left="nixfredOS │ ${_hdr_loc_plain}  ${current_time}  ${weather_str} "
     _hdr_fill=$((content_width - ${#_hdr_left}))
     [ "$_hdr_fill" -lt 2 ] && _hdr_fill=2
     _hdr_dashes=$(_repeat_chars "$_hdr_fill" "─")
-    printf "${NIXFREDOS_P}Li${NIXFREDOS_A}fe${NIXFREDOS_I}OS${RESET} ${SLATE_600}│${RESET} ${_hdr_loc}  ${NIXFREDOS_TIME}${current_time}${RESET}  ${NIXFREDOS_WEATHER}${weather_str}${RESET} ${SLATE_600}${_hdr_dashes}${RESET}\n"
+    printf "${NIXFREDOS_P}nix${NIXFREDOS_A}fred${NIXFREDOS_I}OS${RESET} ${SLATE_600}│${RESET} ${_hdr_loc}  ${NIXFREDOS_TIME}${current_time}${RESET}  ${NIXFREDOS_WEATHER}${weather_str}${RESET} ${SLATE_600}${_hdr_dashes}${RESET}\n"
 fi
 printf "${SLATE_600}%s${RESET}\n" "$SEP_DASHED"
 

@@ -4,7 +4,7 @@ version: 1.3.1
 
 # CLI-First Architecture Pattern
 
-> CLI-first is how the Life OS stays deterministic (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb's moves are code you can script, test, and trust — prompts orchestrate, code executes.
+> CLI-first is how the nixfredOS stays deterministic (`NIXFREDOS/DOCUMENTATION/nixfredOS/nixfredOSThesis.md`): the hill-climb's moves are code you can script, test, and trust — prompts orchestrate, code executes.
 
 **Status**: Active Standard
 **Applies To**: All new nixfredOS tools, skills, and systems
