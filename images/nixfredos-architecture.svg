@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" font-family="JetBrains Mono, Fira Code, Menlo, Consolas, monospace">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#00f0ff"/></marker>
+    <pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#00f0ff" stroke-opacity="0.06"/></pattern>
+  </defs>
+  <rect width="1200" height="560" fill="#07070f"/>
+  <rect width="1200" height="560" fill="url(#g)"/>
+  <text x="600" y="44" text-anchor="middle" font-size="22" fill="#e6ecff" letter-spacing="4">HOW nixfredOS WRAPS YOUR AI</text>
+
+  <!-- You -->
+  <path d="M500 70H700L716 86V130H484V86Z" fill="#12102a" stroke="#ff2bd6" stroke-width="2"/>
+  <text x="600" y="107" text-anchor="middle" font-size="20" fill="#ff2bd6">YOU</text>
+  <path d="M600 130V168" stroke="#00f0ff" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- nixfredOS layer -->
+  <path d="M110 172H1090L1110 192V420H90V192Z" fill="#0b1020" stroke="#00f0ff" stroke-width="2"/>
+  <text x="130" y="204" font-size="16" fill="#00f0ff" letter-spacing="3">nixfredOS LAYER</text>
+
+  <g font-size="15" text-anchor="middle">
+    <g transform="translate(130,224)">
+      <rect width="300" height="80" rx="4" fill="#111a33" stroke="#7a5cff"/>
+      <text x="150" y="34" fill="#e6ecff">THE ALGORITHM</text>
+      <text x="150" y="58" fill="#8fa3d9" font-size="12">current state → ideal state</text>
+    </g>
+    <g transform="translate(450,224)">
+      <rect width="300" height="80" rx="4" fill="#111a33" stroke="#7a5cff"/>
+      <text x="150" y="34" fill="#e6ecff">MEMORY + TELOS</text>
+      <text x="150" y="58" fill="#8fa3d9" font-size="12">goals, people, past sessions</text>
+    </g>
+    <g transform="translate(770,224)">
+      <rect width="300" height="80" rx="4" fill="#111a33" stroke="#7a5cff"/>
+      <text x="150" y="34" fill="#e6ecff">SKILLS</text>
+      <text x="150" y="58" fill="#8fa3d9" font-size="12">56 bundled skills</text>
+    </g>
+    <g transform="translate(130,320)">
+      <rect width="300" height="80" rx="4" fill="#111a33" stroke="#00f0ff"/>
+      <text x="150" y="34" fill="#e6ecff">HOOKS</text>
+      <text x="150" y="58" fill="#8fa3d9" font-size="12">56 lifecycle + security hooks</text>
+    </g>
+    <g transform="translate(450,320)">
+      <rect width="300" height="80" rx="4" fill="#111a33" stroke="#00f0ff"/>
+      <text x="150" y="34" fill="#e6ecff">PULSE</text>
+      <text x="150" y="58" fill="#8fa3d9" font-size="12">dashboard + observability</text>
+    </g>
+    <g transform="translate(770,320)">
+      <rect width="300" height="80" rx="4" fill="#111a33" stroke="#00f0ff"/>
+      <text x="150" y="34" fill="#e6ecff">LEARNING</text>
+      <text x="150" y="58" fill="#8fa3d9" font-size="12">ratings feed self-improvement</text>
+    </g>
+  </g>
+
+  <path d="M600 420V458" stroke="#00f0ff" stroke-width="2" marker-end="url(#a)"/>
+  <!-- harness -->
+  <path d="M300 462H900L916 478V530H284V478Z" fill="#12102a" stroke="#7a5cff" stroke-width="2"/>
+  <text x="600" y="494" text-anchor="middle" font-size="18" fill="#e6ecff">AI HARNESS</text>
+  <text x="600" y="518" text-anchor="middle" font-size="12" fill="#8fa3d9">Claude Code · Cursor · Codex · Gemini CLI</text>
+</svg>

@@ -77,9 +77,10 @@ const STOPWORDS = new Set<string>([
 // Tokens that legitimately appear in SHIPPING/public files — public attribution,
 // product names, and generic vendor/model terms nixfredOS references. Lowercase.
 const ALLOWLIST = new Set<string>([
-  // "nixfred" stays: the public repo slug, required attribution in shipped
-  // Fabric/Daemon content. The bare surname moved to the operator allowlist file.
-  "nixfred","nixfredos","github","claude","anthropic","opus","sonnet","haiku","fable","cloudflare","typescript","react","astro","vitepress","hono","wrangler","stripe","google","apple","openai","gemini","descript","elevenlabs",
+  // "nixfred"/"nixfredos": this fork's public slug and product name.
+  // "danielmiessler"/"dmiessler" stay: upstream attribution and the Fabric repo
+  // slug still ship in Fabric/Daemon content and the README credit.
+  "nixfred","nixfredos","danielmiessler","dmiessler","github","claude","anthropic","opus","sonnet","haiku","fable","cloudflare","typescript","react","astro","vitepress","hono","wrangler","stripe","google","apple","openai","gemini","descript","elevenlabs",
   // generic vendor/product terms that appear in feature code (not private fingerprints)
   "unifi","ubiquiti","ecobee","homebridge","homekit","oura","limitless","beehiiv","fabric","substrate","telos","surface","arbol","pulse","interceptor","ratgdo",
   // generic security/tech abbreviations (not in the dictionary, but appear in code/docs)

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#05060d"/>
+      <stop offset="1" stop-color="#0d0520"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00f0ff"/>
+      <stop offset="0.55" stop-color="#7a5cff"/>
+      <stop offset="1" stop-color="#ff2bd6"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#00f0ff" stroke-opacity="0.07" stroke-width="1"/>
+    </pattern>
+    <filter id="glow" x="-20%" y="-50%" width="140%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1280" height="400" fill="url(#bg)"/>
+  <rect width="1280" height="400" fill="url(#grid)"/>
+  <!-- chamfered frame -->
+  <path d="M40 24H1216L1256 64V376H64L24 336V24Z" fill="none" stroke="url(#word)" stroke-width="2" stroke-opacity="0.8"/>
+  <path d="M24 24H120M24 24V80" stroke="#00f0ff" stroke-width="4"/>
+  <path d="M1256 376H1160M1256 376V320" stroke="#ff2bd6" stroke-width="4"/>
+  <!-- circuit traces -->
+  <g stroke="#00f0ff" stroke-opacity="0.35" stroke-width="2" fill="none">
+    <path d="M60 355H120L150 325H190"/>
+    <path d="M1200 110H1060L1030 140H950"/>
+    <path d="M80 110H160L190 140"/>
+  </g>
+  <g fill="#00f0ff"><circle cx="190" cy="325" r="4"/><circle cx="190" cy="140" r="4"/></g>
+  <g fill="#ff2bd6"><circle cx="950" cy="140" r="4"/></g>
+  <!-- wordmark -->
+  <text x="640" y="215" text-anchor="middle" font-family="JetBrains Mono, Fira Code, Menlo, Consolas, monospace" font-size="118" font-weight="700" fill="url(#word)" filter="url(#glow)" letter-spacing="2">nixfredOS</text>
+  <text x="640" y="272" text-anchor="middle" font-family="JetBrains Mono, Fira Code, Menlo, Consolas, monospace" font-size="24" fill="#c9d4ff" letter-spacing="6">YOUR AI. YOUR CONTEXT. YOUR OPERATING SYSTEM.</text>
+  <text x="640" y="330" text-anchor="middle" font-family="JetBrains Mono, Fira Code, Menlo, Consolas, monospace" font-size="16" fill="#00f0ff" fill-opacity="0.7" letter-spacing="3">[ memory ] :: [ skills ] :: [ hooks ] :: [ algorithm ] :: [ pulse ]</text>
+</svg>
