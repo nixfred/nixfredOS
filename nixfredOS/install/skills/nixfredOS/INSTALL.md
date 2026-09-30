@@ -184,6 +184,8 @@ cd <skillRoot>/install/memory-engine && ./install
 mem search "test"          # should answer "No results found." on a fresh install
 ```
 
+If `mem` is "command not found", `~/bin` is not on the PATH (the default on macOS). The installer prints the one line to add to `~/.zshrc` or `~/.bashrc`; show it to your human and add it with a yes. Hooks work either way.
+
 Then offer the optional semantic layer **only if Ollama is present** (`command -v ollama`): `ollama pull nomic-embed-text && mem embed backfill`. Without Ollama, keyword recall works fine; say so and move on.
 
 Teach your human the one habit that matters: saying **"remember X"** makes you write a memory file that same turn. Details: `install/memory-engine/README.md` and `install/memory-engine/docs/LRMS.md`.

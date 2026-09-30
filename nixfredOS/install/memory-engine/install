@@ -33,6 +33,7 @@ CLAUDE_DIR="$HOME/.claude"
 HOOKS_DIR="$CLAUDE_DIR/hooks"
 MEMORY_DIR="$CLAUDE_DIR/MEMORY"
 BIN_DIR="$HOME/bin"
+USER_PATH="$PATH"   # the PATH the user actually has, before we extend ours below
 
 log() { echo "[LMF4] $1"; }
 ok()  { echo "[LMF4] ✓ $1"; }
@@ -244,6 +245,14 @@ if [ -d "$MEM_SRC/src" ]; then
         chmod +x dist/index.js
         ln -sf "$MEM_DEST/dist/index.js" "$BIN_DIR/mem"
         ok "mem CLI → ~/bin/mem (v$(grep '"version"' "$MEM_SRC/package.json" | head -1 | cut -d'"' -f4))"
+        case ":$USER_PATH:" in
+            *":$BIN_DIR:"*) ;;
+            *)
+                rc="$HOME/.bashrc"; case "${SHELL##*/}" in zsh) rc="$HOME/.zshrc" ;; esac
+                log "Note: ~/bin is not on your PATH, so 'mem' won't be found by name yet."
+                log "      Add it with:  echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> $rc  then open a new terminal."
+                log "      (Hooks don't need this; they call the engine directly.)" ;;
+        esac
     else
         err "mem CLI build failed"
     fi
