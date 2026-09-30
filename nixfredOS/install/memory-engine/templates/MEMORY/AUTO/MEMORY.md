@@ -1,0 +1,3 @@
+- [EXAMPLE: prefers bun](example-prefers-bun.md) — fake example: the user uses bun, not npm. Delete once you have real memories.
+- [EXAMPLE: staging port](example-staging-db-port.md) — fake example: staging database listens on 5433.
+- [EXAMPLE: drafts only](example-drafts-not-sends.md) — fake example: never send email, write drafts.
