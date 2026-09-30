@@ -11,6 +11,8 @@
 
 # nixfredOS
 
+🌐 **https://nixfredos.com**
+
 **nixfredOS turns a general AI coding harness into a personal operating system.** It learns your goals, remembers your past sessions, routes each request to the right skill, and guards your machine with hooks that check every action before it runs.
 
 Your harness is the engine. nixfredOS is the rest of the car.
