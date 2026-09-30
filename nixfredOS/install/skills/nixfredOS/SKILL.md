@@ -23,12 +23,12 @@ The install + onboarding surface for **nixfredOS** — the Life Operating System
 
 nixfredOS is distributed as **one self-contained skill** — the `nixfredOS/` directory is the *entire* distribution. Everything ships inside it: the orchestrator (`SKILL.md`, `Workflows/`, `Tools/`), the whole-system payload under `install/`, and the one-line bootstrap at `install/install.sh`. **Nothing ships outside the skill** — no release-root `install.sh`, no `.claude/` clone.
 
-**The primary install is AI-native: give `INSTALL.md` (served at `ournixfredos.ai/install`) to your AI and say "install this."** nixfredOS is AI-native, so the install is too — you hand the doc (or its link) to whatever harness you already use, and your AI installs nixfredOS on your OS and harness, with permission at each step. It's the same document a human can read and follow. `INSTALL.md` opens with a capability gate, drives the install Tools (which run under `bun` on any OS, not a shell), wires integration per-harness (honest about what each gets), then runs Setup → Interview.
+**The primary install is AI-native: give `INSTALL.md` (at `github.com/nixfred/nixfredOS/blob/main/nixfredOS/INSTALL.md`) to your AI and say "install this."** nixfredOS is AI-native, so the install is too — you hand the doc (or its link) to whatever harness you already use, and your AI installs nixfredOS on your OS and harness, with permission at each step. It's the same document a human can read and follow. `INSTALL.md` opens with a capability gate, drives the install Tools (which run under `bun` on any OS, not a shell), wires integration per-harness (honest about what each gets), then runs Setup → Interview.
 
 A terminal shortcut stays for Claude Code on macOS/Linux:
 
 ```
-curl -fsSL https://ournixfredos.ai/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nixfred/nixfredOS/main/nixfredOS/install/install.sh | bash
 ```
 
 Both are served from the skill's own single sources of truth — `INSTALL.md` at the skill root, `install/install.sh` for the shell path (which hands off to the agentic `/nixfredOS setup`). Two versions coexist and mean different things: the frontmatter `version:` is this skill's own **component** line (bumped by the maintainer-side `BumpSkillVersions`, which does not ship in the release), while the **distribution** version — what a user means by "nixfredOS 7.x" — is the GitHub release tag and the `NIXFREDOS_RELEASES/<version>/` parent dir. Never read the component line as the release number. The payload (skills, hooks, system prompt, Algorithm, docs, runtime tools) rides along under `install/` and is placed during setup, with permission.

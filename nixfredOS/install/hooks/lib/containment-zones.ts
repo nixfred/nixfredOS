@@ -159,10 +159,10 @@ export const PATTERN_ALLOWLIST_FILES: readonly string[] = [
   // as test fixtures — the whole point is verifying the gate catches them.
   "hooks/SystemFileGuard.test.ts",
   // 2026-07-20 — the public install flow embeds the public install URL
-  // (curl -fsSL https://ournixfredos.ai/install.sh) BY DESIGN: ournixfredos.ai is
+  // (curl -fsSL raw.githubusercontent.com/nixfred/nixfredOS/.../install.sh) BY DESIGN: the GitHub repo is
   // the public marketing/install domain, and these files are the shipped
   // install path + brand-asset doc. Reviewed hit-by-hit before allowlisting;
-  // only the ournixfredos.ai pattern fires in them.
+  // only the public install URL fires in them.
   "skills/nixfredOS/SKILL.md",
   "skills/nixfredOS/INSTALL.md",
   "skills/nixfredOS/install/install.sh",

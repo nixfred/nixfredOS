@@ -10,14 +10,14 @@ nixfredOS is AI-native, so the install is too. You hand this file (or its link) 
 
 Paste this to your AI — Claude Code, Cursor, Cline, Codex, Gemini CLI, or any coding assistant that can read files and run commands:
 
-> **Read https://ournixfredos.ai/install and install nixfredOS for me.**
+> **Read https://github.com/nixfred/nixfredOS/blob/main/nixfredOS/INSTALL.md and install nixfredOS for me.**
 
 That's the primary path. Your AI reads the rest of this page and installs nixfredOS for you.
 
 Prefer a terminal? There's a shell shortcut for Claude Code on macOS/Linux:
 
 ```
-curl -fsSL https://ournixfredos.ai/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nixfred/nixfredOS/main/nixfredOS/install/install.sh | bash
 ```
 
 Everything below is written for the AI doing the install.

@@ -11,6 +11,6 @@
   <!-- body -->
   <text x="34" y="98" fill="#586170" font-size="19"># one line — the whole system, installed</text>
   <text x="34" y="146" font-size="22">
-    <tspan fill="#3FB950">$</tspan><tspan fill="#E6EDF3">  curl -fsSL https://ournixfredos.ai/install.sh | bash</tspan>
+    <tspan fill="#3FB950">$</tspan><tspan fill="#E6EDF3">  curl -fsSL https://raw.githubusercontent.com/nixfred/nixfredOS/main/nixfredOS/install/install.sh | bash</tspan>
   </text>
 </svg>

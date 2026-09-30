@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════
 #   nixfredOS — One-Line Bootstrap Installer
-#   curl -fsSL https://ournixfredos.ai/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/nixfred/nixfredOS/main/nixfredOS/install/install.sh | bash
 #
 #   Unlike a whole-harness install, this does NOT clobber your setup.
 #   It drops the nixfredOS skill into your existing harness, then hands off
@@ -58,7 +58,7 @@ set -euo pipefail
 # (public issue #1694). Corrected to the newest published release.
 # Repo owner/name is parameterized — set at publish time, never hard-coded here.
 NIXFREDOS_REPO="${NIXFREDOS_REPO:-nixfred/nixfredOS}"
-NIXFREDOS_FALLBACK_TAG="v7.40.4"
+NIXFREDOS_FALLBACK_TAG="v1.0.0"
 if [ -n "${NIXFREDOS_VERSION:-}" ]; then
   NIXFREDOS_TAG="v${NIXFREDOS_VERSION}"
 elif [ -z "${NIXFREDOS_TAG:-}" ]; then
