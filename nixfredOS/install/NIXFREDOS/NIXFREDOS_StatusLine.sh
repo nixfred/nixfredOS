@@ -134,7 +134,7 @@ if [ -n "$cwd" ] && git -C "$cwd" rev-parse --git-dir >/dev/null 2>&1; then
     [ "${ahead:-0}" -gt 0 ] && git_seg="${git_seg} ${CY}↑${ahead}${R}"
 fi
 tilde='~'; short_cwd="${cwd/#$HOME/$tilde}"
-cwd_seg="${MU}${short_cwd}${R}"
+cwd_seg="${CY}▸${R} ${TX}${B}${short_cwd}${R}"
 
 # ── hooks health (cached 300s): declared hook commands whose file exists ────
 HOOKS_CACHE="$STATE_DIR/sl-hooks.cache"
@@ -311,7 +311,7 @@ join() {  # join segments with the separator, skipping empties
 
 case "$MODE" in
     one)
-        printf '%s\n' "$(join "$wordmark" "${cc}${ctx_pct}%${R}" "${git_seg:-$cwd_seg}")"
+        printf '%s\n' "$(join "$wordmark" "${cc}${ctx_pct}%${R}" "${TX}${B}${short_cwd##*/}${R}" "$git_seg")"
         ;;
     *)
         # five groups, one per line: session · code · memory · plan · environment
@@ -324,7 +324,7 @@ case "$MODE" in
             [ -n "$w_th" ] && wx_seg="${wx_seg} ${DIM}· tmrw ↑${w_th}° ↓${w_tl}° ☂${w_rain}%${R}"
         fi
         printf '%s\n' "$(join "$wordmark" "$ident" "$model_seg" "$ctx_seg" "$sess_seg" "$extra_sess")"
-        printf '%s\n' "$(join "$git_seg" "$extra_code" "$cwd_seg" "$algo_seg" "$hooks_seg")"
+        printf '%s\n' "$(join "$cwd_seg" "$git_seg" "$extra_code" "$algo_seg" "$hooks_seg")"
         l3=$(join "$mem_seg" "$recall_seg" "$rating_seg"); [ -n "$l3" ] && printf '%s\n' "$l3"
         [ -n "$plan_seg" ] && printf '%s\n' "$plan_seg"
         l5=$(join "$wx_seg" "$gpu_seg" "$extra_env" "$voice_seg"); [ -n "$l5" ] && printf '%s\n' "$l5"
