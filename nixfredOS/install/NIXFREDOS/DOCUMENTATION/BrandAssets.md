@@ -6,29 +6,28 @@ version: 1.1.0
 
 Canonical logo naming for the whole nixfredOS project. Use these names everywhere — docs, repos, site, release, design files.
 
-## The two logos
+## The logos
 
 | Name | What it is | File | Use it for |
 |------|-----------|------|------------|
-| **nixfredOS Logo Full** | The block-glyph **plus** the `nixfredOS` wordmark | `nixfredos-logo-full.png` | The primary logo. Anywhere text fits: site nav (top-left), GitHub repo README header, release README, docs headers, slides. |
-| **nixfredOS Logo Graphical** | The block-glyph **only** — the ascending staircase of blocks, no text | `nixfredos-logo-graphical.png` | Icon / mark contexts: square placements, hero centerpiece, favicons, app icon, avatars, watermarks. |
-
-**Full = blocks + text. Graphical = blocks only.** That is the whole rule.
+| **nixfredOS Banner** | Neon `nixfredOS` wordmark in a chamfered frame | `images/nixfredos-banner.svg` | README header, social cards, slides. |
+| **nixfredOS Icon** | The `nf` glyph in a chamfered gradient square | `images/nixfredos-icon.svg` | Square placements: favicons, app icon (Pulse MenuBar `icon.png`), Pulse header logo, avatars. |
+| **Architecture diagram** | How nixfredOS wraps your AI | `images/nixfredos-architecture.svg` | Docs and README. |
 
 ## Colors
 
-Blues: light-blue wordmark/blocks (`Life`), bright-blue accent (`OS` and lead blocks), dark-navy accent blocks. Transparent background.
+Cyan `#00f0ff` → violet `#7a5cff` → magenta `#ff2bd6` gradient on near-black `#07070f`. Monospace type (JetBrains Mono, Fira Code, Menlo fallback).
 
 ## Rules
 
-- **Full is the default.** Reach for Graphical only when there's no room for the wordmark or the wordmark would duplicate nearby text.
-- **Never AI-generate these.** They're deterministic block/tile marks — author/edit as precise SVG with the exact brand colors; PNG exports are for placement only (per the brand-asset authoring rule).
-- Keep the filenames `nixfredos-logo-full.*` and `nixfredos-logo-graphical.*` stable across every repo so references don't drift.
+- **SVG is the source of truth.** PNGs are exports for placement only: `rsvg-convert -w 512 -h 512 images/nixfredos-icon.svg -o icon.png`.
+- **Never AI-generate these.** Author and edit them as precise SVG with the exact brand colors.
+- Keep filenames stable so references don't drift.
 
 ## Where they live
 
-- Site: `ournixfredos.ai` → `public/nixfredos-logo-full.png` (nav), `public/nixfredos-logo-graphical.png` (hero center).
-- Public repo: `images/nixfredos-logo-full.png` → the README header (maintainer-side source: the release skill's `RELEASE_TEMPLATES/nixfredos-logo-full.png`).
+- Site: `nixfredos.com`.
+- Public repo: `images/` (banner, icon, architecture). Pulse PNG exports: `NIXFREDOS/PULSE/MenuBar/icon*.png`, `NIXFREDOS/PULSE/Observability/{public,out}/nixfredos-logo.png`.
 
 ---
 
