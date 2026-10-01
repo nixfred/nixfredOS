@@ -568,8 +568,8 @@ function createBanner(forceDesign?: string): string {
     }
   }
 
-  // Default is plain at every width. NIXFREDOS_BANNER=navy restores the framed banner.
-  if ((process.env.NIXFREDOS_BANNER || "plain") === "plain") return createPlainBanner(stats, width);
+  // Default is the neon navy banner. NIXFREDOS_BANNER=plain opts into two quiet lines.
+  if ((process.env.NIXFREDOS_BANNER || "navy") === "plain") return createPlainBanner(stats, width);
 
   // Width-based responsive routing (Navy theme)
   if (width >= BREAKPOINTS.FULL) {
