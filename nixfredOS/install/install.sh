@@ -71,7 +71,7 @@ done
 # (public issue #1694). Corrected to the newest published release.
 # Repo owner/name is parameterized — set at publish time, never hard-coded here.
 NIXFREDOS_REPO="${NIXFREDOS_REPO:-nixfred/nixfredOS}"
-NIXFREDOS_FALLBACK_TAG="v1.2.2"
+NIXFREDOS_FALLBACK_TAG="v1.4.0"
 if [ -n "${NIXFREDOS_VERSION:-}" ]; then
   NIXFREDOS_TAG="v${NIXFREDOS_VERSION}"
 elif [ -z "${NIXFREDOS_TAG:-}" ]; then
