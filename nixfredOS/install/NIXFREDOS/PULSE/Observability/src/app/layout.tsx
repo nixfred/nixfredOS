@@ -5,6 +5,7 @@ import AppHeader from "@/components/AppHeader";
 import ObserverScope from "@/components/ObserverScope";
 import SecurityBanner from "@/components/SecurityBanner";
 import { observerScopeScript } from "@/lib/observer";
+import { themePrepaintScript } from "@/lib/omarchy-theme-prepaint";
 import CommandPalette from "@/components/palette/CommandPalette";
 import TemplateOnboarding from "@/components/TemplateOnboarding";
 import { Providers } from "./providers";
@@ -30,6 +31,7 @@ export default function RootLayout({
         {/* Pre-paint: applies observer class + route scope before first render so
             a reload with observer on never flashes personal data. */}
         <script dangerouslySetInnerHTML={{ __html: observerScopeScript() }} />
+        <script dangerouslySetInnerHTML={{ __html: themePrepaintScript() }} />
       </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans`}>
         <Providers>

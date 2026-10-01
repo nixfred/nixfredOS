@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Menu, X, Cpu, Eye, EyeOff } from "lucide-react";
 import { useObserverMode } from "@/contexts/ObserverModeContext";
 import { TabFreshnessPill } from "@/components/TabFreshnessPill";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 // Nav manifest is shared with the command palette — single source of truth.
 // AGENTS (metaNav) is pinned in the right cluster on EVERY page — it's the
 // meta view of the system working on itself, never part of the scrolling row.
@@ -70,7 +71,7 @@ export default function AppHeader() {
   return (
     <header
       className="sticky top-0 z-50 backdrop-blur-md"
-      style={{ background: "rgba(6, 11, 26, 0.85)" }}
+      style={{ background: "color-mix(in srgb, var(--ground) 85%, transparent)" }}
     >
       {/* ── Tier 1 — persistent global nav (the only always-on menu) ── */}
       <div className="border-b border-line-1">
@@ -110,6 +111,7 @@ export default function AppHeader() {
 
             {/* ── Right cluster: AGENTS (meta, pinned) · SYSTEM (mode-switch, pinned) · Observer ── */}
             <div className="flex items-center gap-2 shrink-0 ml-auto">
+              <ThemeSwitcher />
               <Link
                 href={agentsItem.href}
                 className={cn(

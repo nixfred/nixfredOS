@@ -67,7 +67,7 @@
     --relationships: #B794F4;
     --rhythms: #2DD4BF;
     /* Legacy alias kept while stragglers migrate (was the neon set) */
-    --neon-blue: #3B82F6;
+    --neon-blue: var(--accent-blue);
 
     /* shadcn vars — same palette as HSL triplets */
     --background: 225 63% 6%;         /* #060B1A */
