@@ -539,8 +539,18 @@ const BREAKPOINTS = {
   // Below 45: Ultra-compact text only
 };
 
-type DesignName = "navy" | "navy-medium" | "navy-compact" | "navy-minimal" | "navy-ultra";
-const ALL_DESIGNS: DesignName[] = ["navy", "navy-medium", "navy-compact", "navy-minimal", "navy-ultra"];
+// Plain default: two quiet lines, one accent colour, no frame, no glyphs.
+// The framed navy designs stay available via --design=navy etc.
+function createPlainBanner(stats: SystemStats, _width: number): string {
+  const accent = rgb(59, 130, 246);
+  const dim = rgb(100, 116, 139);
+  const on = stats.name === "nixfredOS" ? "" : "on nixfredOS ";
+  const head = `${accent}${stats.name}${RESET} ${dim}${on}${stats.paiVersion}, ${stats.skills} skills, ${stats.hooks} hooks${RESET}`;
+  return `\n${head}\n${dim}${stats.catchphrase}${RESET}\n`;
+}
+
+type DesignName = "plain" | "navy" | "navy-medium" | "navy-compact" | "navy-minimal" | "navy-ultra";
+const ALL_DESIGNS: DesignName[] = ["plain", "navy", "navy-medium", "navy-compact", "navy-minimal", "navy-ultra"];
 
 function createBanner(forceDesign?: string): string {
   const width = getTerminalWidth();
@@ -549,6 +559,7 @@ function createBanner(forceDesign?: string): string {
   // If a specific design is requested (for --design= flag or --test mode)
   if (forceDesign) {
     switch (forceDesign) {
+      case "plain": return createPlainBanner(stats, width);
       case "navy": return createNavyBanner(stats, width);
       case "navy-medium": return createNavyMediumBanner(stats, width);
       case "navy-compact": return createNavyCompactBanner(stats, width);
@@ -557,7 +568,10 @@ function createBanner(forceDesign?: string): string {
     }
   }
 
-  // Width-based responsive routing (Navy theme only)
+  // Default is plain at every width. NIXFREDOS_BANNER=navy restores the framed banner.
+  if ((process.env.NIXFREDOS_BANNER || "plain") === "plain") return createPlainBanner(stats, width);
+
+  // Width-based responsive routing (Navy theme)
   if (width >= BREAKPOINTS.FULL) {
     return createNavyBanner(stats, width);
   } else if (width >= BREAKPOINTS.MEDIUM) {
