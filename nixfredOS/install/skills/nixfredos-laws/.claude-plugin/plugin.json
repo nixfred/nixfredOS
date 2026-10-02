@@ -1,0 +1,7 @@
+{
+  "name": "nixfredos-laws",
+  "version": "0.1.0",
+  "description": "A live band above the prompt: a three-strikes failure counter and a remote readout before every git commit and push",
+  "author": { "name": "nixfred", "url": "https://github.com/nixfred/nixfredOS" },
+  "types": "./types/index.d.ts"
+}
