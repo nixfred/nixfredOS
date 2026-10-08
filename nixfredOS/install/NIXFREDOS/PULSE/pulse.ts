@@ -4,7 +4,7 @@
  *
  * Single process managing all nixfredOS daemon functionality:
  *   - Cron job scheduling (heartbeat loop)
- *   - Voice notifications (ElevenLabs TTS)
+ *   - Voice notifications (ElevenLabs or OS-native TTS)
  *   - Hook validation (skill-guard, agent-guard)
  *   - Observability (data APIs + dashboard)
  *   - iMessage bot (SQLite polling + claude-agent-sdk)
@@ -836,10 +836,8 @@ async function main() {
         return Response.json({ modules: config.modules })
       }
 
-      // Voice routes: /notify, /notify/personality, /voice, /voice/health
-      // (/voice/health is implemented and advertised by the module but was never
-      // forwarded, so it 404'd — public PR #1621, @elhoim)
-      if (voiceModule && (pathname === "/notify" || pathname === "/notify/personality" || pathname === "/voice" || pathname === "/voice/health")) {
+      // Voice routes: /notify, /notify/personality (alias), /speaking, /voice/health
+      if (voiceModule && (pathname === "/notify" || pathname === "/notify/personality" || pathname === "/speaking" || pathname === "/voice/health")) {
         const resp = await voiceModule.handleVoiceRequest(req, pathname)
         if (resp) return resp
       }

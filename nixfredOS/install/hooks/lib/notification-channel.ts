@@ -1,8 +1,8 @@
 /**
  * notification-channel.ts — Channel isolation for desktop VoiceServer.
  *
- * The Pulse VoiceServer at localhost:31337/notify is the DESKTOP voice channel.
- * It plays audio out of the laptop speaker. Stop / StopFailure / UserPromptSubmit
+ * The Pulse voice endpoint at 127.0.0.1:31337/notify is the DESKTOP voice channel.
+ * It plays audio out of the local speaker. Stop / StopFailure / UserPromptSubmit
  * hooks that fire /notify must NOT fire when the Claude session is running on
  * behalf of a remote channel (iMessage, Siri) — those channels deliver
  * replies via their own APIs, and a desktop /notify call from a
@@ -81,7 +81,7 @@ export function logSkippedVoice(opts: {
       reason: `remote_channel:${channel}`,
       message: opts.message,
       character_count: opts.message.length,
-      voice_engine: 'elevenlabs' as const,
+      voice_engine: 'pulse' as const,
     };
     const dir = paiPath('MEMORY', 'VOICE');
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });

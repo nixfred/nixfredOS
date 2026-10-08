@@ -230,7 +230,7 @@ All endpoints served by the Pulse daemon's observability module (`Observability/
 |----------|--------|---------|--------|
 | `/notify` | POST | Send TTS notification via ElevenLabs | `pulse.ts` |
 | `/notify/personality` | POST | Personality-aware notification | `pulse.ts` |
-| `/voice` | GET | Voice status | `pulse.ts` |
+| `/voice/health` | GET | Voice status (engine, switch) | `pulse.ts` |
 
 **Hook Validation**
 

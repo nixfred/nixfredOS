@@ -2,8 +2,8 @@
  * VoiceNotification.ts - Voice Notification Handler
  *
  * PURPOSE:
- * Sends completion messages to the voice server for TTS playback.
- * Extracts the 🗣️ voice line from responses and sends to ElevenLabs via voice server.
+ * Sends completion messages to the Pulse voice endpoint (POST /notify).
+ * The engine (ElevenLabs or an OS-native fallback) is chosen by the server.
  *
  * Pure handler: receives pre-parsed transcript data, sends to voice server.
  * No I/O for transcript reading - that's done by VoiceCompletion.hook.ts.
@@ -12,7 +12,7 @@
 import { existsSync, appendFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { paiPath } from '../lib/paths';
-import { getIdentity, type VoicePersonality } from '../lib/identity';
+import { getIdentity } from '../lib/identity';
 import { getISOTimestamp } from '../lib/time';
 import { isValidVoiceCompletion, getVoiceFallback } from '../lib/output-validators';
 import { findActiveSessionByUUID } from '../lib/isa-utils';
@@ -22,20 +22,13 @@ import { PULSE_BASE } from '../../NIXFREDOS/PULSE/endpoint';
 
 const DA_IDENTITY = getIdentity();
 
-// ElevenLabs voice notification payload
-interface ElevenLabsNotificationPayload {
+// POST /notify payload. voice_id is omitted: the server resolves the voice
+// from ~/.claude/voice.json, then the assistant identity.
+interface NotificationPayload {
   message: string;
   title?: string;
+  progress?: boolean;
   voice_enabled?: boolean;
-  voice_id?: string;
-  voice_settings?: {
-    stability: number;
-    similarity_boost: number;
-    style: number;
-    speed: number;
-    use_speaker_boost: boolean;
-  };
-  volume?: number;
 }
 
 interface VoiceEvent {
@@ -44,8 +37,7 @@ interface VoiceEvent {
   event_type: 'sent' | 'failed' | 'skipped';
   message: string;
   character_count: number;
-  voice_engine: 'elevenlabs';
-  voice_id: string;
+  voice_engine: 'pulse';
   status_code?: number;
   error?: string;
 }
@@ -92,25 +84,21 @@ function logVoiceEvent(event: VoiceEvent): void {
   }
 }
 
-async function sendNotification(payload: ElevenLabsNotificationPayload, sessionId: string): Promise<void> {
-  const voiceId = payload.voice_id || DA_IDENTITY.mainDAVoiceID;
-
+async function sendNotification(payload: NotificationPayload, sessionId: string): Promise<void> {
   const baseEvent: Omit<VoiceEvent, 'event_type' | 'status_code' | 'error'> = {
     timestamp: getISOTimestamp(),
     session_id: sessionId,
     message: payload.message,
     character_count: payload.message.length,
-    voice_engine: 'elevenlabs',
-    voice_id: voiceId,
+    voice_engine: 'pulse',
   };
 
   try {
-    // Use ElevenLabs voice server /notify endpoint
     const response = await fetch(`${PULSE_BASE}/notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(10000), // 10s timeout - ElevenLabs TTS takes ~4s, need headroom
+      signal: AbortSignal.timeout(15000), // cloud TTS takes a few seconds; leave headroom
     });
 
     if (!response.ok) {
@@ -122,12 +110,13 @@ async function sendNotification(payload: ElevenLabsNotificationPayload, sessionI
         error: response.statusText,
       });
     } else {
+      // The server answers {status:"off"} when the voice switch is OFF.
+      const body: any = await response.json().catch(() => ({}));
       logVoiceEvent({
         ...baseEvent,
-        event_type: 'sent',
+        event_type: body?.status === 'off' ? 'skipped' : 'sent',
         status_code: response.status,
       });
-
     }
   } catch (error) {
     console.error('[Voice] Failed to send:', error);
@@ -141,7 +130,7 @@ async function sendNotification(payload: ElevenLabsNotificationPayload, sessionI
 
 /**
  * Handle voice notification with pre-parsed transcript data.
- * Uses ElevenLabs TTS via the voice server.
+ * The server speaks it, or stays silent when the voice switch is OFF.
  */
 export async function handleVoice(parsed: ParsedTranscript, sessionId: string): Promise<void> {
   let voiceCompletion = parsed.voiceCompletion;
@@ -158,22 +147,10 @@ export async function handleVoice(parsed: ParsedTranscript, sessionId: string): 
     return;
   }
 
-  // Get voice settings from DA identity in settings.json
-  const voiceId = DA_IDENTITY.mainDAVoiceID;
-  const voiceSettings = DA_IDENTITY.voice;
-
-  const payload: ElevenLabsNotificationPayload = {
+  const payload: NotificationPayload = {
     message: voiceCompletion,
     title: `${DA_IDENTITY.name} says`,
     voice_enabled: true,
-    voice_id: voiceId,
-    voice_settings: voiceSettings ? {
-      stability: voiceSettings.stability ?? 0.5,
-      similarity_boost: voiceSettings.similarityBoost ?? 0.75,
-      style: voiceSettings.style ?? 0.0,
-      speed: voiceSettings.speed ?? 1.0,
-      use_speaker_boost: voiceSettings.useSpeakerBoost ?? true,
-    } : undefined,
   };
 
   await sendNotification(payload, sessionId);

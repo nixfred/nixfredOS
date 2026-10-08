@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# nixfredos-voice: the voice switch and speaker CLI for nixfredOS.
+#
+#   nixfredos-voice on | off            flip the switch (~/.claude/voice.json)
+#   nixfredos-voice status              state + engine + Pulse health (exit 0 on, 1 off)
+#   nixfredos-voice say [--bg] <msg>    speak through Pulse (--bg: queue and return)
+#   nixfredos-voice say --stdin         read the message from stdin
+#   nixfredos-voice test                speak a short test line
+#   nixfredos-voice listen on|off|status   run the microphone listener as a service
+#
+# Everything goes through POST /notify on Pulse (127.0.0.1 only). See
+# NIXFREDOS/VOICE/README.md. Requires bun (already a nixfredOS dependency) and curl.
+set -u
+
+CONFIG_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+SWITCH="$CONFIG_ROOT/voice.json"
+PULSE="${PULSE_URL:-http://127.0.0.1:31337}"
+
+# Resolve this script through symlinks so the listener path works from ~/.local/bin.
+src="${BASH_SOURCE[0]}"
+while [ -L "$src" ]; do
+  dir="$(cd "$(dirname "$src")" && pwd -P)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+HERE="$(cd "$(dirname "$src")" && pwd -P)"
+LISTENER="$HERE/../talk/src/listen.ts"
+
+die() { echo "nixfredos-voice: $*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "$1 is required but not on PATH"; }
+
+# Is the switch on? Fail closed: missing, unreadable or invalid means off.
+switch_on() {
+  [ "${NIXFREDOS_VOICE:-}" = "off" ] && return 1
+  [ -r "$SWITCH" ] || return 1
+  SWITCH_FILE="$SWITCH" bun -e '
+    try { process.exit(JSON.parse(require("fs").readFileSync(process.env.SWITCH_FILE, "utf8")).enabled === true ? 0 : 1) }
+    catch { process.exit(1) }' 2>/dev/null
+}
+
+set_switch() { # $1 = true|false; keeps every other key
+  mkdir -p "$CONFIG_ROOT"
+  SWITCH_FILE="$SWITCH" WANT="$1" bun -e '
+    const fs = require("fs"), f = process.env.SWITCH_FILE
+    let c = {}
+    try { c = JSON.parse(fs.readFileSync(f, "utf8")); if (!c || typeof c !== "object" || Array.isArray(c)) c = {} }
+    catch (e) { if (fs.existsSync(f)) console.error("nixfredos-voice: existing voice.json is invalid, starting fresh") }
+    c.enabled = process.env.WANT === "true"
+    if (!c.engine) c.engine = "auto"
+    fs.writeFileSync(f + ".tmp", JSON.stringify(c, null, 2) + "\n")
+    fs.renameSync(f + ".tmp", f)' || die "could not write $SWITCH"
+}
+
+speak() { # $1 = message, $2 = "bg" to queue
+  [ -n "$1" ] || die "nothing to say"
+  MSG="$1" BG="${2:-}" bun -e '
+    const body = { message: process.env.MSG }
+    if (process.env.BG === "bg") body.progress = true
+    process.stdout.write(JSON.stringify(body))' \
+    | curl -sS --max-time 30 -X POST -H 'Content-Type: application/json' --data-binary @- "$PULSE/notify" \
+    || die "Pulse is not reachable at $PULSE (is it running?)"
+  echo
+}
+
+cmd_status() {
+  local state=OFF rc=1
+  if switch_on; then state=ON; rc=0; fi
+  echo "voice: $state  ($SWITCH)"
+  local health
+  if health="$(curl -sS --max-time 3 "$PULSE/voice/health" 2>/dev/null)"; then
+    echo "pulse: up  $health"
+  else
+    echo "pulse: not reachable at $PULSE"
+  fi
+  exit $rc
+}
+
+cmd_listen() {
+  need bun
+  local action="${1:-status}"
+  [ -f "$LISTENER" ] || die "listener not found at $LISTENER"
+  local bunbin; bunbin="$(command -v bun)"
+  case "$(uname -s)" in
+    Linux)
+      need systemctl
+      case "$action" in
+        on)
+          need systemd-run
+          systemctl --user is-active --quiet nixfredos-listen && { echo "listener already running"; return 0; }
+          systemd-run --user --unit=nixfredos-listen --collect \
+            -p Restart=on-failure -p RestartSec=2 -p Nice=10 \
+            "$bunbin" "$LISTENER" || die "could not start the listener"
+          echo "listener on" ;;
+        off) systemctl --user stop nixfredos-listen 2>/dev/null; echo "listener off" ;;
+        status) systemctl --user is-active nixfredos-listen || true ;;
+        *) die "usage: nixfredos-voice listen on|off|status" ;;
+      esac ;;
+    Darwin)
+      local label=com.nixfredos.listen plist="$HOME/Library/LaunchAgents/com.nixfredos.listen.plist" uid; uid="$(id -u)"
+      case "$action" in
+        on)
+          mkdir -p "$HOME/Library/LaunchAgents"
+          cat > "$plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$label</string>
+  <key>ProgramArguments</key><array><string>$bunbin</string><string>$LISTENER</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+  <key>ThrottleInterval</key><integer>2</integer>
+  <key>Nice</key><integer>10</integer>
+</dict></plist>
+PLIST
+          launchctl bootout "gui/$uid/$label" 2>/dev/null
+          launchctl bootstrap "gui/$uid" "$plist" || die "launchctl bootstrap failed"
+          echo "listener on (macOS may ask for microphone access the first time)" ;;
+        off) launchctl bootout "gui/$uid/$label" 2>/dev/null; echo "listener off" ;;
+        status) launchctl print "gui/$uid/$label" >/dev/null 2>&1 && echo active || echo inactive ;;
+        *) die "usage: nixfredos-voice listen on|off|status" ;;
+      esac ;;
+    *) die "listener is Linux and macOS only" ;;
+  esac
+}
+
+usage() {
+  sed -n '2,11p' "$src" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+case "${1:-}" in
+  on)  need bun; set_switch true;  echo "voice ON" ;;
+  off) need bun; set_switch false; echo "voice OFF" ;;
+  status) need bun; need curl; cmd_status ;;
+  say)
+    need bun; need curl; shift
+    bg=""; from_stdin=0
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --bg) bg=bg; shift ;;
+        --stdin) from_stdin=1; shift ;;
+        --) shift; break ;;
+        *) break ;;
+      esac
+    done
+    if [ "$from_stdin" = 1 ]; then msg="$(cat)"; else msg="$*"; fi
+    speak "$msg" "$bg" ;;
+  test)
+    need bun; need curl
+    switch_on || echo "note: voice is OFF; the server will stay silent (nixfredos-voice on)" >&2
+    speak "Voice test. If you can hear this, the voice is working." ;;
+  listen) shift; cmd_listen "${1:-status}" ;;
+  -h|--help|help) usage 0 ;;
+  *) usage 1 ;;
+esac

@@ -31,7 +31,7 @@ Each subsystem runs in its own crash-isolated loop within the single Pulse proce
 | Subsystem | Description | Source |
 |--------|-------------|--------|
 | **Cron** | Scheduled jobs -- the original heartbeat loop | `pulse.ts` |
-| **Voice** | ElevenLabs TTS notifications | `VoiceServer/voice.ts` |
+| **Voice** | Spoken replies (ElevenLabs or OS-native, off by default) | `VoiceServer/voice.ts` |
 | **Observability** | Data APIs + Observatory dashboard + security management APIs (absorbed from observability-server.ts) | `Observability/observability.ts` |
 | **Worker** | GitHub Issues work polling for nixfredOS Workers (optional) | `checks/github-work.ts` |
 | **Assistant** 🔒 | Digital Assistant identity, heartbeat, scheduling, growth. **Private — the whole `NIXFREDOS/PULSE/Assistant/` tree is excluded from the public release** (`ShadowRelease.ts` staging exclude); the DA *concept* ships via `DOCUMENTATION/Pulse/DaSubsystem.md`, the implementation does not. | `Assistant/module.ts` |
@@ -766,7 +766,7 @@ The observability module serves all dashboard data. Full API reference with all 
 | Knowledge | `/api/knowledge`, `/api/knowledge/:domain/:slug` | Knowledge archive read/write |
 | Wiki | `/api/wiki`, `/api/wiki/search`, `/api/wiki/graph` | System docs, full-text search, knowledge graph (wikilink-based; CLI `KnowledgeGraph.ts` provides richer graph with tags + related fields) |
 | DA | `/assistant/*` | Identity, tasks, diary, opinions, personality |
-| Voice | `/notify`, `/voice` | ElevenLabs TTS notifications |
+| Voice | `/notify`, `/speaking`, `/voice/health` | Spoken replies (ElevenLabs or OS-native engine; see `NIXFREDOS/VOICE/README.md`) |
 | Hook Validation | `/hooks/skill-guard`, `/hooks/agent-guard` | PreToolUse HTTP hooks for Skill/Agent validation |
 | Synapse | `/api/synapse` | Input routing composite: amber-ledger worker stats, KNOWLEDGE save counts, X-bookmark counts (KV + local), per-path sheet sends — served by `modules/synapse.ts`, 60s cache |
 | Ledger | `/api/ledger` | Change-tracking read surface: current versions (umbrella + Algorithm + system prompt), SYSTEMUPDATES registry rollups + latest entries, estate deploy events (`deploys.jsonl`), integrity stamp, version drift — served by `modules/ledger.ts`, 60s cache, all probes fail-soft. Page `/ledger` (systemNav, 2026-07-19). Canonical doc: `NIXFREDOS/DOCUMENTATION/Ledger/LedgerSystem.md` |

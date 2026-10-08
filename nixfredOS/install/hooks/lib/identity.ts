@@ -56,6 +56,7 @@ const DEFAULT_PRINCIPAL = {
   timezone: 'UTC',
 };
 
+/** Optional ElevenLabs tuning kept in the assistant identity. Engines other than ElevenLabs ignore it. */
 export interface VoiceProsody {
   stability: number;
   similarityBoost: number;
@@ -65,22 +66,6 @@ export interface VoiceProsody {
   volume?: number;
 }
 
-export interface VoicePersonality {
-  baseVoice: string;
-  enthusiasm: number;
-  energy: number;
-  expressiveness: number;
-  resilience: number;
-  composure: number;
-  optimism: number;
-  warmth: number;
-  formality: number;
-  directness: number;
-  precision: number;
-  curiosity: number;
-  playfulness: number;
-}
-
 export interface Identity {
   name: string;
   fullName: string;
@@ -88,7 +73,6 @@ export interface Identity {
   mainDAVoiceID: string;
   color: string;
   voice?: VoiceProsody;
-  personality?: VoicePersonality;
 }
 
 export interface Principal {
@@ -160,25 +144,6 @@ function mapFrontmatterVoice(v: any): VoiceProsody | undefined {
   };
 }
 
-function mapFrontmatterPersonality(traits: any, baseVoice: string | undefined): VoicePersonality | undefined {
-  if (!traits) return undefined;
-  return {
-    baseVoice: baseVoice ?? '',
-    enthusiasm: traits.enthusiasm ?? 0,
-    energy: traits.energy ?? 0,
-    expressiveness: traits.expressiveness ?? 0,
-    resilience: traits.resilience ?? 0,
-    composure: traits.composure ?? 0,
-    optimism: traits.optimism ?? 0,
-    warmth: traits.warmth ?? 0,
-    formality: traits.formality ?? 0,
-    directness: traits.directness ?? 0,
-    precision: traits.precision ?? 0,
-    curiosity: traits.curiosity ?? 0,
-    playfulness: traits.playfulness ?? 0,
-  };
-}
-
 /**
  * Get DA (Digital Assistant) identity.
  *
@@ -189,7 +154,7 @@ function mapFrontmatterPersonality(traits: any, baseVoice: string | undefined): 
  *
  * The settings.daidentity → DA_IDENTITY.md frontmatter → DEFAULT_IDENTITY chain
  * below stays the fallback: it covers the fields config does not carry
- * (personality traits, base voice), and an install that has no config yet
+ * (the ElevenLabs voice id and tuning), and an install that has no config yet
  * resolves exactly as it did before.
  *
  * public PR #1781, @anikinsasha
@@ -246,7 +211,6 @@ function legacyIdentity(): Identity {
       mainDAVoiceID: mainVoiceId || DEFAULT_IDENTITY.mainDAVoiceID,
       color: daidentity.color || DEFAULT_IDENTITY.color,
       voice: voiceConfig as VoiceProsody | undefined,
-      personality: daidentity.personality as VoicePersonality | undefined,
     };
   }
 
@@ -262,7 +226,6 @@ function legacyIdentity(): Identity {
     mainDAVoiceID: mainVoice.voice_id || DEFAULT_IDENTITY.mainDAVoiceID,
     color: core.color || DEFAULT_IDENTITY.color,
     voice: mapFrontmatterVoice(mainVoice),
-    personality: mapFrontmatterPersonality(fm.personality?.traits, voice.base_voice),
   };
 }
 
@@ -367,10 +330,6 @@ export function getDefaultPrincipal(): Principal {
 
 export function getVoiceProsody(): VoiceProsody | undefined {
   return getIdentity().voice;
-}
-
-export function getVoicePersonality(): VoicePersonality | undefined {
-  return getIdentity().personality;
 }
 
 /**

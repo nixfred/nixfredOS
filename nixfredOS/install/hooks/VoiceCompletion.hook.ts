@@ -5,14 +5,17 @@
  *
  * PURPOSE:
  * Extracts the 🗣️ voice line from Claude's response and sends it to
- * the ElevenLabs voice server for spoken playback.
+ * the Pulse voice endpoint for spoken playback (ElevenLabs or an OS-native
+ * engine, chosen by the server).
  *
  * TRIGGER: Stop
  *
  * NEEDS TRANSCRIPT: Yes (for voice line extraction)
  *
  * VOICE GATE: Only fires for main terminal sessions (not subagents).
- * Checks for kitty-sessions/{sessionId}.json to determine if main session.
+ * Also obeys the voice switch (~/.claude/voice.json, fail-closed) and skips
+ * turns the user spoke through the listener: PromptProcessing already told the
+ * assistant to answer aloud first, so a second completion line would repeat it.
  *
  * HANDLER: handlers/VoiceNotification.ts
  */
@@ -21,6 +24,7 @@ import { readHookInput, parseTranscriptFromInput } from './lib/hook-io';
 import { handleVoice } from './handlers/VoiceNotification';
 import { extractVoiceCompletion } from '../NIXFREDOS/TOOLS/TranscriptParser';
 import { isDesktopChannel, logSkippedVoice, getNotificationChannel } from './lib/notification-channel';
+import { isVoiceEnabled, consumeSpokenTurnFlag } from './lib/voice-switch';
 
 /**
  * Extract a speakable summary from response text when no 🗣️ line exists.
@@ -84,6 +88,19 @@ async function main() {
     const channel = getNotificationChannel();
     console.error(`[VoiceCompletion] Voice OFF (remote channel: ${channel})`);
     logSkippedVoice({ hookLabel: 'VoiceCompletion', message: '', sessionId: input.session_id });
+    process.exit(0);
+  }
+
+  // Spoken turn: the answer was already voiced in the first action. Always
+  // delete the flag so it cannot suppress the next turn.
+  if (consumeSpokenTurnFlag(input.session_id)) {
+    console.error('[VoiceCompletion] Skipping (spoken turn, already answered aloud)');
+    process.exit(0);
+  }
+
+  // Voice switch: OFF (or missing/invalid voice.json) means silence.
+  if (!isVoiceEnabled()) {
+    console.error('[VoiceCompletion] Voice OFF (voice.json)');
     process.exit(0);
   }
 
