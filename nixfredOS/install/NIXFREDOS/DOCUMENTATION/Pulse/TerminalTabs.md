@@ -112,10 +112,9 @@ Both agree on the bracket, so a tab can never contradict the board; the board is
 
 **Why this replaced `PHASE_TAB_CONFIG` / `setPhaseTab`:** the old design hand-listed valid phase names in four separate places. When the Algorithm's vocabulary moved in 8.x, three of those lists were never updated — so `ISASync` stopped repainting tabs mid-run, `PromptProcessing` wiped a run's tab on every follow-up prompt, and `ACTIVE_LOOKUP_PHASES` in `isa-utils.ts` stopped matching any current run at SessionEnd. All three were vocabulary-drift bugs of the same shape, and all three are structurally impossible now: the lists are derived from the table.
 
-**Two drivers feed `setAscentTab`** (a third, `NIXFREDOS/TOOLS/AlgoPhase.ts`, was retired 2026-07-14 in the agents-dashboard deep strip — phase is now written only via ISA frontmatter):
+**One driver feeds `setAscentTab`** (`NIXFREDOS/TOOLS/AlgoPhase.ts` and the voice module's old phase capture were retired — phase is now written only via ISA frontmatter):
 
 1. **`ISASync.hook.ts` (PostToolUse, Edit on ISA.md)** — the primary driver: fires when the Algorithm executor edits the ISA frontmatter `phase:` field (catches the scaffold write and manual phase edits), writes `work.json` (including the resolved `ascent` blob the status line reads) AND stamps the tab.
-2. **`NIXFREDOS/PULSE/VoiceServer/voice.ts::tryPhaseCapture` (out-of-process)** — fires when an Algorithm phase-announcement voice call hits `/notify` with `phase` + `slug`. The daemon resolves the kitty socket via the per-session file at `MEMORY/STATE/kitty-sessions/{sessionUUID}.json` (written by `KittyEnvPersist.hook.ts` at SessionStart).
 
 **Cross-process support details:**
 

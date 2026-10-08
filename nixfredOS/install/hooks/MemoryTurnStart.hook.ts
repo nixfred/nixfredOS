@@ -21,6 +21,8 @@
  * NOTHING — no header noise. Synchronous BM25 over the typed corpus, 60s
  * cached by query hash. Fail-open: a retriever error never blocks the prompt.
  *
+ * Spoken prompts (🎙️) skip all recall output for latency.
+ *
  * Subagent skip: checked ONCE here (the sub-hooks' own shims keep their checks
  * for standalone runs). Failure mode: any sub-hook error is caught inside its
  * run() (stderr + null); this wrapper never blocks a prompt. Always exit 0.
@@ -37,6 +39,7 @@ import { createHash } from "node:crypto";
 import { resolve as pathResolve } from "node:path";
 import { homedir } from "node:os";
 import { isSubagentContext as isSubagent } from './lib/subagent';
+import { isSpokenPrompt } from './lib/voice-switch';
 
 // ── Hot-layer injection gate (2026-07-11, context-window cleanup #1) ─────────
 // The <nixfredos-memory> block is ~1.5K tokens; injecting it EVERY prompt duplicated
@@ -105,6 +108,11 @@ if (isSubagent()) process.exit(0);
   // one was clobbered by a concurrent write and sat dead five days). Per-session
   // by construction; a concurrent session's turn must not clear this one's.
   try { clearSystemDelta(sessionId); } catch {}
+
+  // Spoken prompt (🎙️): latency is the whole experience, a spoken round trip
+  // must stay a few seconds. Skip every recall step; the next typed prompt
+  // gets them as usual. Cadence and ledger state above already ran.
+  if (isSpokenPrompt(prompt)) process.exit(0);
 
   if (shouldInject(sessionId)) {
     const memory = loadMemory();

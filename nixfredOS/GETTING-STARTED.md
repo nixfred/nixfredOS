@@ -40,14 +40,15 @@ Run it whenever anything feels off. Every ❌ line carries its own fix command. 
 - **Verify:** `Doctor.ts --network` → cloudflare ✅ (runs a real `wrangler whoami`).
 - **Don't want it?** `Doctor.ts decline cloudflare`.
 
-## ElevenLabs — voice notifications
+## Voice — spoken replies (optional)
 
-**Powers:** spoken notifications through the Pulse voice server.
+**Powers:** spoken replies and notifications through the Pulse voice module. Off by default; works on Linux and macOS.
 
-- **Install:** nothing — it's an API.
-- **Auth:** add `ELEVENLABS_API_KEY=...` and `ELEVENLABS_VOICE_ID=...` to `<configRoot>/.env`. Pick a **premade or cloned** voice from your ElevenLabs library — "famous" voices are not usable through the API and fail with `famous_voice_not_permitted`. A scoped, TTS-only API key works fine.
-- **Verify:** `Doctor.ts --network` → voice ✅ (runs a real 2-character synthesis on the exact path notifications use).
-- **Don't want it?** `Doctor.ts decline voice` — notifications stay on-screen only.
+- **Engines:** ElevenLabs is optional. With no key, voice uses macOS `say`, then `piper`, then `espeak-ng`. On Linux also install an audio player (`mpv` recommended).
+- **Turn it on:** `nixfredos-voice on` (writes `<configRoot>/voice.json`). `nixfredos-voice status` shows the engine in use; `nixfredos-voice test` speaks a line; `nixfredos-voice off` silences it.
+- **ElevenLabs (optional):** add `ELEVENLABS_API_KEY=...` to `<configRoot>/.env` and set `"elevenlabs_voice_id"` in `voice.json`. Pick a **premade or cloned** voice — "famous" voices are not usable through the API and fail with `famous_voice_not_permitted`. A scoped, TTS-only key works.
+- **Verify:** `Doctor.ts` → voice ✅ (shows the engine); `--network` adds a real 2-character ElevenLabs synthesis when that engine is in use.
+- **Don't want it?** Do nothing, or `Doctor.ts decline voice`. Full reference: `NIXFREDOS/VOICE/README.md`.
 
 ## gh — the work system of record
 

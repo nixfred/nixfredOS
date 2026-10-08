@@ -47,6 +47,7 @@ import { paiPath } from './lib/paths';
 import { updateSessionNameInWorkJson, upsertSession } from './lib/isa-utils';
 import { isDesktopChannel, logSkippedVoice, getNotificationChannel } from './lib/notification-channel';
 import { PULSE_BASE } from '../NIXFREDOS/PULSE/endpoint';
+import { isSpokenPrompt, readVoiceSwitch, setSpokenTurnFlag } from './lib/voice-switch';
 import { homedir } from "node:os";
 
 // Normalize env path vars that Claude Code injects without shell expansion (nixfredOS#1404)
@@ -889,6 +890,27 @@ async function main() {
 
     if (!prompt || !sessionId) { process.exit(0); }
 
+    // ── Spoken prompt (🎙️): the user talked to the listener ──
+    // Answer aloud FIRST, keep the round trip short, and tell VoiceCompletion
+    // not to repeat the answer. Fires when the voice switch is on, or when a
+    // remote speaker is configured (the speaker host plays it).
+    const spokenTurn = isSpokenPrompt(prompt);
+    if (spokenTurn) {
+      const sw = readVoiceSwitch();
+      if ((sw.enabled || sw.speaker) && (process.env.NIXFREDOS_VOICE || '').toLowerCase() !== 'off') {
+        setSpokenTurnFlag(sessionId);
+        process.stdout.write(
+          '<nixfredos-spoken-turn>\n' +
+          'The user SPOKE this prompt aloud (it begins with the microphone mark). Reply by voice:\n' +
+          '1. Your FIRST action is Bash: nixfredos-voice say --bg "<your spoken answer>" - plain spoken sentences, no markdown, no lists, no code, no URLs.\n' +
+          '2. If the task needs tools, say a few words first ("checking"), then use them. Keep the spoken part short.\n' +
+          '3. Put details, code and links on screen as usual.\n' +
+          '4. Do NOT end this turn with a voice line; the completion hook is skipped for spoken turns.\n' +
+          '</nixfredos-spoken-turn>\n'
+        );
+      }
+    }
+
     // ── Determine session state ──
     const existingNames = readSessionNames();
     const isFirstPrompt = !existingNames[sessionId];
@@ -1064,15 +1086,15 @@ async function main() {
         // remote-originated turn. Tab title is set regardless above.
         const voiceContent = finalTitle && isValidWorkingTitle(finalTitle) ? finalTitle : null;
         if (voiceContent) {
-          if (isDesktopChannel()) {
-            const identity = getIdentity();
+          if (spokenTurn) {
+            // The spoken answer is the voice for this turn; no title announcement.
+          } else if (isDesktopChannel()) {
             try {
               await fetch(`${PULSE_BASE}/notify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   message: voiceContent.replace(/\.$/, ''),
-                  voice_id: identity.mainDAVoiceID,
                   voice_enabled: true,
                 }),
                 signal: AbortSignal.timeout(5000),

@@ -1,94 +1,238 @@
 /**
  * nixfredOS Pulse — Voice Module
  *
- * ElevenLabs TTS, macOS notifications, pronunciation preprocessing.
- * Absorbed from VoiceServer/server.ts into a Pulse-embeddable module.
+ * One speaker, many callers. Linux and macOS. ElevenLabs is optional: the
+ * module falls back to OS-native engines when there is no key.
  *
- * Config resolution (3-tier):
- *   1. Caller sends voice_settings in request body → use directly (pass-through)
- *   2. Caller sends voice_id → look up in settings.json daidentity.voices → use those settings
- *   3. Neither → use settings.json daidentity.voices.main as default
+ * Engine order (engine "auto"; force one with voice.json "engine"):
+ *   elevenlabs  ELEVENLABS_API_KEY + a voice id. Best quality, paid, cloud.
+ *   say         macOS built in.
+ *   piper       local neural TTS: `piper` on PATH plus voice.json "piper_model".
+ *   espeak      espeak-ng. Robotic, but everywhere.
+ *   none        log and stay silent.
  *
- * Does NOT create its own HTTP server. Exports handleVoiceRequest() for the
- * parent pulse.ts to call on matching routes.
+ * Switch: ~/.claude/voice.json {"enabled": bool, ...}. Read on EVERY line.
+ * Missing or invalid means OFF (fail closed). NIXFREDOS_VOICE=off also means OFF.
+ * See NIXFREDOS/VOICE/README.md for the full config contract.
+ *
+ * Does NOT create its own HTTP server. Exports handleVoiceRequest() for
+ * pulse.ts to call on matching routes. Every external program is spawned with
+ * an argument array, never a shell string.
  */
 
-import { spawn } from "child_process"
+import { spawn, spawnSync } from "child_process"
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from "fs"
+import { homedir, hostname, platform, tmpdir } from "os"
 import { join } from "path"
-import { existsSync, readFileSync, rmSync } from "fs"
 import { log } from "../lib"
-import { disambiguateHomographs } from "../lib/homographs"
-import { homedir } from "node:os";
 
 // ── Public Config Interface ──
 
 export interface VoiceConfig {
   enabled: boolean
-  elevenlabs_api_key?: string
-  default_voice_id?: string
   pronunciations_path?: string
 }
 
-// ── Internal Types ──
+// ── State ──
 
-interface ElevenLabsVoiceSettings {
-  stability: number
-  similarity_boost: number
-  style?: number
-  speed?: number
-  use_speaker_boost?: boolean
-}
-
-interface VoiceEntry {
-  voiceId: string
-  voiceName?: string
-  stability: number
-  similarity_boost: number
-  style: number
-  speed: number
-  use_speaker_boost: boolean
-  volume: number
-}
-
-interface LoadedVoiceConfig {
-  defaultVoiceId: string
-  voices: Record<string, VoiceEntry>
-  voicesByVoiceId: Record<string, VoiceEntry>
-  desktopNotifications: boolean
-}
-
-interface CompiledRule {
-  regex: RegExp
-  phonetic: string
-}
-
-interface EmotionalOverlay {
-  stability: number
-  similarity_boost: number
-}
-
-// ── Module State ──
+const HOME = homedir()
+const CONFIG_ROOT = join(HOME, ".claude")
+const SWITCH = join(CONFIG_ROOT, "voice.json")
+const IS_MAC = platform() === "darwin"
+const MAX_SPOKEN_CHARS = 1000
 
 let moduleConfig: VoiceConfig = { enabled: false }
-let pronunciationRules: CompiledRule[] = []
-let voiceConfig: LoadedVoiceConfig = { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
-let defaultVoiceId = ""
-let initialized = false
+let pronunciations: Array<{ regex: RegExp; spoken: string }> = []
 
-// ── Constants ──
+// ── Switch and config ──
 
-const FALLBACK_VOICE_SETTINGS: ElevenLabsVoiceSettings = {
-  stability: 0.5,
-  similarity_boost: 0.75,
-  style: 0.0,
-  speed: 1.0,
-  use_speaker_boost: true,
+function readJson(path: string): any {
+  try { return JSON.parse(readFileSync(path, "utf-8")) } catch { return {} }
 }
 
-const FALLBACK_VOLUME = 1.0
+/** voice.json, re-read on every use so `nixfredos-voice on|off` takes effect at once. */
+function cfg(): any {
+  const c = readJson(SWITCH)
+  return c && typeof c === "object" ? c : {}
+}
 
-// Hard ceiling on a single playback; a player past this is hung, not slow.
-const PLAYBACK_TIMEOUT_MS = 90_000
+/** Fail closed: only an explicit boolean true turns voice on. */
+function voiceOn(): boolean {
+  if ((process.env.NIXFREDOS_VOICE || "").toLowerCase() === "off") return false
+  return cfg().enabled === true
+}
+
+/** KEY=value lookup: process env, then <configRoot>/.env, then ~/.env. */
+function envKey(name: string): string | undefined {
+  if (process.env[name]) return process.env[name]
+  for (const file of [join(CONFIG_ROOT, ".env"), join(HOME, ".env")]) {
+    try {
+      for (const line of readFileSync(file, "utf-8").split("\n")) {
+        const i = line.indexOf("=")
+        if (i > 0 && line.slice(0, i).replace(/^export\s+/, "").trim() === name) {
+          const v = line.slice(i + 1).trim().replace(/^["']|["']$/g, "")
+          if (v) return v
+        }
+      }
+    } catch { /* next file */ }
+  }
+  return undefined
+}
+
+/** ElevenLabs voice id: voice.json, else the assistant identity in settings.json. */
+function defaultVoiceId(): string | undefined {
+  const c = cfg()
+  if (typeof c.elevenlabs_voice_id === "string" && c.elevenlabs_voice_id) return c.elevenlabs_voice_id
+  const main = readJson(join(CONFIG_ROOT, "settings.json"))?.daidentity?.voices?.main
+  const id = main?.voiceId || main?.VOICE_ID || main?.voice_id
+  return typeof id === "string" && id ? id : undefined
+}
+
+function has(bin: string): boolean {
+  return spawnSync(IS_MAC ? "/usr/bin/which" : "which", [bin], { stdio: "ignore" }).status === 0
+}
+
+export type Engine = "elevenlabs" | "say" | "piper" | "espeak" | "none"
+
+function pickEngine(): Engine {
+  const c = cfg()
+  const ok: Record<Engine, () => boolean> = {
+    elevenlabs: () => !!envKey("ELEVENLABS_API_KEY") && !!defaultVoiceId(),
+    say: () => IS_MAC,
+    piper: () => has("piper") && typeof c.piper_model === "string" && existsSync(c.piper_model),
+    espeak: () => has("espeak-ng"),
+    none: () => true,
+  }
+  const want = String(c.engine || "auto")
+  if (want !== "auto" && want in ok) return ok[want as Engine]() ? (want as Engine) : "none"
+  for (const e of ["elevenlabs", "say", "piper", "espeak"] as Engine[]) if (ok[e]()) return e
+  return "none"
+}
+
+// ── Text ──
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+/** Optional user map: exact phrase -> spoken text (NIXFREDOS/USER/PRINCIPAL/PRONUNCIATIONS.json). */
+function loadPronunciations(customPath?: string): void {
+  const path = customPath ?? join(CONFIG_ROOT, "NIXFREDOS", "USER", "PRINCIPAL", "PRONUNCIATIONS.json")
+  pronunciations = []
+  if (!existsSync(path)) return
+  try {
+    const flat: Record<string, string> = JSON.parse(readFileSync(path, "utf-8"))
+    pronunciations = Object.entries(flat).map(([term, spoken]) => {
+      // \b only sits next to a word char; anchor only where the term edge is one.
+      const lead = /^\w/.test(term) ? "\\b" : ""
+      const tail = /\w$/.test(term) ? "\\b" : ""
+      return { regex: new RegExp(`${lead}${escapeRegex(term)}${tail}`, "g"), spoken: String(spoken) }
+    })
+    log("info", `Voice: loaded ${pronunciations.length} pronunciation rules`)
+  } catch (error) {
+    log("warn", "Voice: could not load PRONUNCIATIONS.json", { error: String(error) })
+  }
+}
+
+/** Strip what reads badly out loud, then apply the pronunciation map. */
+export function speakable(text: string): string {
+  let out = text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/https?:\/\/\S+/g, "a link")
+    .replace(/[*_#>|]/g, " ")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+  for (const rule of pronunciations) out = out.replace(rule.regex, rule.spoken)
+  return out.slice(0, MAX_SPOKEN_CHARS)
+}
+
+// ── Playback ──
+
+function run(cmd: string, args: string[], stdin?: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const p = spawn(cmd, args, { stdio: [stdin === undefined ? "ignore" : "pipe", "ignore", "ignore"] })
+    p.on("error", reject)
+    p.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} exited ${code}`))))
+    if (stdin !== undefined) p.stdin!.end(stdin)
+  })
+}
+
+async function playFile(file: string, volume: number): Promise<void> {
+  if (IS_MAC) return run("/usr/bin/afplay", ["-v", String(volume), file])
+  if (has("mpv")) return run("mpv", ["--no-video", "--really-quiet", "--volume-max=150", `--volume=${Math.round(volume * 100)}`, file])
+  if (has("ffplay")) return run("ffplay", ["-nodisp", "-autoexit", "-loglevel", "quiet", file])
+  if (file.endsWith(".wav") && has("paplay")) return run("paplay", [file])
+  throw new Error("no audio player found (install mpv)")
+}
+
+/** Hand the line to another machine's `nixfredos-voice say`; nothing plays here. */
+function forwardToSpeaker(host: string, text: string): Promise<void> {
+  // A leading "-" would be read as an ssh option; the allow-list also blocks spaces and shell syntax.
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(host)) throw new Error("invalid speaker host")
+  return run(
+    "ssh",
+    ["-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "--", host, '"$HOME/.claude/NIXFREDOS/VOICE/bin/nixfredos-voice" say --stdin'],
+    text,
+  )
+}
+
+async function speakNow(text: string, voiceId?: string): Promise<void> {
+  const c = cfg()
+  const speaker = typeof c.speaker === "string" ? c.speaker.trim() : ""
+  if (speaker && speaker.toLowerCase() !== hostname().toLowerCase()) return forwardToSpeaker(speaker, text)
+
+  const volume = Number(c.volume ?? 1)
+  const engine = pickEngine()
+  const tmp = join(tmpdir(), `nixfredos-voice-${process.pid}-${Date.now()}`)
+  try {
+    switch (engine) {
+      case "elevenlabs": {
+        const vid = voiceId || defaultVoiceId()!
+        const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(vid)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "audio/mpeg", "xi-api-key": envKey("ELEVENLABS_API_KEY")! },
+          body: JSON.stringify({ text, model_id: c.elevenlabs_model || "eleven_turbo_v2_5" }),
+          signal: AbortSignal.timeout(20000),
+        })
+        if (!r.ok) throw new Error(`ElevenLabs ${r.status}: ${(await r.text()).slice(0, 160)}`)
+        writeFileSync(tmp + ".mp3", new Uint8Array(await r.arrayBuffer()))
+        return await playFile(tmp + ".mp3", volume)
+      }
+      case "say":
+        return await run("/usr/bin/say", [...(c.say_voice ? ["-v", String(c.say_voice)] : []), "--", text])
+      case "piper":
+        await run("piper", ["--model", String(c.piper_model), "--output_file", tmp + ".wav"], text)
+        return await playFile(tmp + ".wav", volume)
+      case "espeak":
+        return await run("espeak-ng", ["--", text])
+      default:
+        log("info", "Voice: no engine available, nothing spoken")
+    }
+  } finally {
+    for (const ext of [".mp3", ".wav"]) try { unlinkSync(tmp + ext) } catch { /* not created */ }
+  }
+}
+
+// One speaker: every line waits for the one before it.
+let queue: Promise<void> = Promise.resolve()
+let pending = 0
+let lastEnd = 0
+
+function enqueue(text: string, voiceId?: string): Promise<void> {
+  pending++
+  const job = () =>
+    speakNow(text, voiceId)
+      .catch((e) => log("warn", `Voice: speech failed: ${e?.message ?? e}`))
+      .finally(() => { pending--; lastEnd = Date.now() })
+  const next = queue.then(job, job)
+  queue = next.catch(() => {})
+  return next
+}
+
+// ── HTTP ──
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "http://localhost",
@@ -96,716 +240,61 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 }
 
-// 13 Emotional Presets — overlay onto resolved voice settings
-const EMOTIONAL_PRESETS: Record<string, EmotionalOverlay> = {
-  // High Energy / Positive
-  excited:     { stability: 0.7, similarity_boost: 0.9 },
-  celebration: { stability: 0.65, similarity_boost: 0.85 },
-  insight:     { stability: 0.55, similarity_boost: 0.8 },
-  creative:    { stability: 0.5, similarity_boost: 0.75 },
-
-  // Success / Achievement
-  success:  { stability: 0.6, similarity_boost: 0.8 },
-  progress: { stability: 0.55, similarity_boost: 0.75 },
-
-  // Analysis / Investigation
-  investigating: { stability: 0.6, similarity_boost: 0.85 },
-  debugging:     { stability: 0.55, similarity_boost: 0.8 },
-  learning:      { stability: 0.5, similarity_boost: 0.75 },
-
-  // Thoughtful / Careful
-  pondering: { stability: 0.65, similarity_boost: 0.8 },
-  focused:   { stability: 0.7, similarity_boost: 0.85 },
-  caution:   { stability: 0.4, similarity_boost: 0.6 },
-
-  // Urgent / Critical
-  urgent: { stability: 0.3, similarity_boost: 0.9 },
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return Response.json(body, { status, headers: CORS_HEADERS })
 }
 
-// Emoji → emotion mapping for marker extraction
-const EMOJI_TO_EMOTION: Record<string, string> = {
-  "\u{1F4A5}": "excited",
-  "\u{1F389}": "celebration",
-  "\u{1F4A1}": "insight",
-  "\u{1F3A8}": "creative",
-  "\u{2728}": "success",
-  "\u{1F4C8}": "progress",
-  "\u{1F50D}": "investigating",
-  "\u{1F41B}": "debugging",
-  "\u{1F4DA}": "learning",
-  "\u{1F914}": "pondering",
-  "\u{1F3AF}": "focused",
-  "\u{26A0}\u{FE0F}": "caution",
-  "\u{1F6A8}": "urgent",
-}
-
-// ── Rate Limiting ──
-
-const requestCounts = new Map<string, { count: number; resetTime: number }>()
-const RATE_LIMIT = 10
-const RATE_WINDOW = 60_000
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const record = requestCounts.get(ip)
-
-  if (!record || now > record.resetTime) {
-    requestCounts.set(ip, { count: 1, resetTime: now + RATE_WINDOW })
-    return true
-  }
-
-  if (record.count >= RATE_LIMIT) return false
-
-  record.count++
-  return true
-}
-
-// ── Pronunciation System ──
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-}
-
-function loadPronunciations(customPath?: string): void {
-  const paiDir = join(homedir(), ".claude", "NIXFREDOS")
-  const userPronPath = customPath ?? join(paiDir, "USER", "PRINCIPAL", "PRONUNCIATIONS.json")
-
-  try {
-    if (existsSync(userPronPath)) {
-      const content = readFileSync(userPronPath, "utf-8")
-      const flat: Record<string, string> = JSON.parse(content)
-
-      pronunciationRules = Object.entries(flat).map(([term, phonetic]) => {
-        // \b only exists next to a word char: a leading \b before "." (".env")
-        // or a trailing \b after "." ("Live.") never matches, silently killing
-        // the rule. Anchor with \b only where the term boundary is a word char.
-        const lead = /^\w/.test(term) ? "\\b" : ""
-        const tail = /\w$/.test(term) ? "\\b" : ""
-        return {
-          regex: new RegExp(`${lead}${escapeRegex(term)}${tail}`, "g"),
-          phonetic,
-        }
-      })
-
-      log("info", `Voice: loaded ${pronunciationRules.length} pronunciation rules from ${userPronPath}`)
-    } else {
-      log("warn", `Voice: PRONUNCIATIONS.json not found at ${userPronPath} — TTS will use default pronunciations`)
-    }
-  } catch (error) {
-    log("error", "Voice: failed to load pronunciations", { error: String(error) })
-  }
-}
-
-function applyPronunciations(text: string): string {
-  let result = text
-  for (const rule of pronunciationRules) {
-    result = result.replace(rule.regex, rule.phonetic)
-  }
-  return result
-}
-
-// ── Voice Config from settings.json ──
-
-function loadVoiceConfigFromSettings(): LoadedVoiceConfig {
-  const settingsPath = join(homedir(), ".claude", "settings.json")
-
-  try {
-    if (!existsSync(settingsPath)) {
-      log("warn", "Voice: settings.json not found — using fallback voice defaults")
-      return { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
-    }
-
-    const content = readFileSync(settingsPath, "utf-8")
-    const settings = JSON.parse(content)
-    const daidentity = settings.daidentity || {}
-    const voicesSection = daidentity.voices || {}
-    const desktopNotifications = settings.notifications?.desktop?.enabled !== false
-
-    const voices: Record<string, VoiceEntry> = {}
-    const voicesByVoiceId: Record<string, VoiceEntry> = {}
-
-    for (const [name, config] of Object.entries(voicesSection)) {
-      const entry = config as Record<string, unknown>
-      const vid = (entry.voiceId || entry.VOICE_ID || entry.voice_id) as string | undefined
-      if (vid) {
-        const voiceEntry: VoiceEntry = {
-          voiceId: vid,
-          voiceName: (entry.voiceName || entry.VOICE_NAME || entry.voice_name) as string | undefined,
-          stability: (entry.stability ?? entry.STABILITY ?? 0.5) as number,
-          similarity_boost: (entry.similarity_boost ?? entry.SIMILARITY_BOOST ?? entry.similarityBoost ?? 0.75) as number,
-          style: (entry.style ?? entry.STYLE ?? 0.0) as number,
-          speed: (entry.speed ?? entry.SPEED ?? 1.0) as number,
-          use_speaker_boost: (entry.use_speaker_boost ?? entry.USE_SPEAKER_BOOST ?? entry.useSpeakerBoost ?? true) as boolean,
-          volume: (entry.volume ?? entry.VOLUME ?? 1.0) as number,
-        }
-        voices[name.toLowerCase()] = voiceEntry
-        voicesByVoiceId[vid] = voiceEntry
-      }
-    }
-
-    const resolvedDefaultVoiceId = voices.main?.voiceId || (daidentity.mainDAVoiceID as string) || ""
-
-    log("info", `Voice: loaded ${Object.keys(voices).length} voice config(s) from settings.json`, {
-      voices: Object.keys(voices),
-    })
-
-    return { defaultVoiceId: resolvedDefaultVoiceId, voices, voicesByVoiceId, desktopNotifications }
-  } catch (error) {
-    log("error", "Voice: failed to load settings.json voice config", { error: String(error) })
-    return { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
-  }
-}
-
-// ── Input Sanitization ──
-
-function sanitizeForSpeech(input: string): string {
-  return input
-    .replace(/<script/gi, "")
-    .replace(/\.\.\//g, "")
-    .replace(/[;&|><`$\\]/g, "")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
-    .replace(/#{1,6}\s+/g, "")
-    .trim()
-    .substring(0, 500)
-}
-
-function validateInput(input: unknown): { valid: boolean; error?: string; sanitized?: string } {
-  if (!input || typeof input !== "string") {
-    return { valid: false, error: "Invalid input type" }
-  }
-
-  if (input.length > 500) {
-    return { valid: false, error: "Message too long (max 500 characters)" }
-  }
-
-  const sanitized = sanitizeForSpeech(input)
-
-  if (!sanitized || sanitized.length === 0) {
-    return { valid: false, error: "Message contains no valid content after sanitization" }
-  }
-
-  return { valid: true, sanitized }
-}
-
-// ── Emotional Marker Extraction ──
-
-function extractEmotionalMarker(message: string): { cleaned: string; emotion?: string } {
-  const emotionMatch = message.match(
-    /\[(\u{1F4A5}|\u{1F389}|\u{1F4A1}|\u{1F3A8}|\u{2728}|\u{1F4C8}|\u{1F50D}|\u{1F41B}|\u{1F4DA}|\u{1F914}|\u{1F3AF}|\u{26A0}\u{FE0F}|\u{1F6A8})\s+(\w+)\]/u,
-  )
-
-  if (emotionMatch) {
-    const emoji = emotionMatch[1]
-    const emotionName = emotionMatch[2].toLowerCase()
-
-    if (EMOJI_TO_EMOTION[emoji] === emotionName) {
-      return {
-        cleaned: message.replace(emotionMatch[0], "").trim(),
-        emotion: emotionName,
-      }
-    }
-  }
-
-  return { cleaned: message }
-}
-
-// ── AppleScript Escaping ──
-
-function escapeForAppleScript(input: string): string {
-  return input.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
-}
-
-// ── TTS Generation ──
-
-async function generateSpeech(
-  text: string,
-  voiceId: string,
-  voiceSettings: ElevenLabsVoiceSettings,
-): Promise<ArrayBuffer> {
-  const apiKey = moduleConfig.elevenlabs_api_key
-  if (!apiKey) throw new Error("ElevenLabs API key not configured")
-
-  const pronouncedText = applyPronunciations(disambiguateHomographs(text))
-  if (pronouncedText !== text) {
-    log("info", `Voice pronunciation: "${text}" -> "${pronouncedText}"`)
-  }
-
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Accept: "audio/mpeg",
-      "Content-Type": "application/json",
-      "xi-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      text: pronouncedText,
-      model_id: "eleven_turbo_v2_5",
-      voice_settings: voiceSettings,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`ElevenLabs API error: ${response.status} - ${errorText}`)
-  }
-
-  return await response.arrayBuffer()
-}
-
-// ── Audio Playback ──
-
-// Platform-aware audio player resolution. macOS ships afplay; Linux has no
-// single standard, so try the common CLI players in order. ffplay/mpg123 handle
-// the MP3 that ElevenLabs returns; paplay/aplay are last-resort fallbacks.
-// Resolved once and cached. #1412 — hardcoding afplay ENOENT'd on Linux.
-interface AudioPlayer {
-  path: string
-  buildArgs: (file: string, volume: number) => string[]
-}
-
-// (public PR #1548, @m8ryx) `volume` is a multiplier where 1.0 is normal,
-// matching afplay's -v. Each Linux player expresses volume on its own integer
-// scale, so map onto that range and clamp. A non-finite or negative value falls
-// back to the player's normal level rather than silencing playback.
-function scaleVolume(volume: number, max: number): number {
-  if (!Number.isFinite(volume) || volume < 0) return max
-  return Math.min(max, Math.round(volume * max))
-}
-
-let resolvedPlayer: AudioPlayer | null | undefined = undefined
-
-function resolveAudioPlayer(): AudioPlayer | null {
-  if (resolvedPlayer !== undefined) return resolvedPlayer
-
-  const candidates: Array<{ cmd: string; buildArgs: (file: string, volume: number) => string[] }> =
-    process.platform === "darwin"
-      ? [{ cmd: "afplay", buildArgs: (file, volume) => ["-v", volume.toString(), file] }]
-      : [
-          {
-            cmd: "ffplay",
-            // ffplay -h: "-volume volume  set startup volume 0=min 100=max"
-            buildArgs: (file, volume) => [
-              "-nodisp",
-              "-autoexit",
-              "-loglevel",
-              "quiet",
-              "-volume",
-              String(scaleVolume(volume, 100)),
-              file,
-            ],
-          },
-          // mpg123 scales with -f, but its range was not verified here; left as-is
-          // rather than guessing a factor.
-          { cmd: "mpg123", buildArgs: (file) => ["-q", file] },
-          {
-            cmd: "paplay",
-            // paplay --help: "--volume=VOLUME  Specify the initial (linear) volume
-            // in range 0...65536"
-            buildArgs: (file, volume) => [`--volume=${scaleVolume(volume, 65536)}`, file],
-          },
-          // aplay has no volume-set option (only --disable-softvol), so volume
-          // cannot be honoured on this fallback.
-          { cmd: "aplay", buildArgs: (file) => ["-q", file] },
-        ]
-
-  for (const c of candidates) {
-    const path = Bun.which(c.cmd)
-    if (path) {
-      resolvedPlayer = { path, buildArgs: c.buildArgs }
-      return resolvedPlayer
-    }
-  }
-
-  resolvedPlayer = null
-  return resolvedPlayer
-}
-
-// Serialize playback so concurrent /notify calls don't overlap on the speaker.
-// TTS generation still runs in parallel; only the playback step is queued via a
-// single promise chain. A failed task can't poison the queue. #1361.
-let playbackQueue: Promise<void> = Promise.resolve()
-
-function enqueuePlayback(task: () => Promise<void>): Promise<void> {
-  const next = playbackQueue.then(task, task)
-  playbackQueue = next.catch(() => {})
-  return next
-}
-
-async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOLUME): Promise<void> {
-  const player = resolveAudioPlayer()
-  if (!player) {
-    const tried = process.platform === "darwin" ? "afplay" : "ffplay/mpg123/paplay/aplay"
-    log("warn", `Voice: no audio player found (tried ${tried}) on ${process.platform} — skipping playback`)
-    return
-  }
-
-  const tempFile = `/tmp/voice-${Date.now()}.mp3`
-  await Bun.write(tempFile, audioBuffer)
-
-  return new Promise((resolve, reject) => {
-    const proc = spawn(player.path, player.buildArgs(tempFile, volume))
-
-    // Watchdog: a hung player must not wedge the serialized playback queue.
-    // 2026-08-13 incident — one afplay froze for 9h and silently blocked every
-    // voice message behind it while /voice/health stayed green. Longest real
-    // messages finish well under a minute, so 90s only fires on a genuine hang.
-    let timedOut = false
-    const watchdog = setTimeout(() => {
-      timedOut = true
-      log("error", `Voice: playback exceeded ${PLAYBACK_TIMEOUT_MS}ms — killing hung player`, { player: player.path })
-      proc.kill("SIGKILL")
-    }, PLAYBACK_TIMEOUT_MS)
-
-    proc.on("error", (error) => {
-      clearTimeout(watchdog)
-      log("error", "Voice: error playing audio", { error: String(error) })
-      try { rmSync(tempFile, { force: true }) } catch {}
-      reject(error)
-    })
-
-    proc.on("exit", (code) => {
-      clearTimeout(watchdog)
-      try { rmSync(tempFile, { force: true }) } catch {}
-      if (timedOut) {
-        reject(new Error(`audio player killed after ${PLAYBACK_TIMEOUT_MS}ms hang`))
-      } else if (code === 0) {
-        resolve()
-      } else {
-        reject(new Error(`audio player exited with code ${code}`))
-      }
-    })
-  })
-}
-
-// ── macOS Desktop Notification ──
-
-async function showDesktopNotification(title: string, message: string): Promise<void> {
-  if (!voiceConfig.desktopNotifications) return
-  // osascript is macOS-only; on Linux/WSL2 the spawn ENOENT's and floods journal
-  if (process.platform !== "darwin") return
-
-  try {
-    const escapedTitle = escapeForAppleScript(title)
-    const escapedMessage = escapeForAppleScript(message)
-    const script = `display notification "${escapedMessage}" with title "${escapedTitle}" sound name ""`
-
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn("/usr/bin/osascript", ["-e", script])
-      proc.on("error", reject)
-      proc.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`osascript exited ${code}`))))
-    })
-  } catch (error) {
-    log("error", "Voice: notification display error", { error: String(error) })
-  }
-}
-
-// ── Core: Send Notification with 3-Tier Voice Settings Resolution ──
-
-async function sendNotification(
-  title: string,
-  message: string,
-  voiceEnabled = true,
-  voiceId: string | null = null,
-  callerVoiceSettings?: Partial<ElevenLabsVoiceSettings> | null,
-  callerVolume?: number | null,
-): Promise<{ voicePlayed: boolean; voiceError?: string }> {
-  const titleValidation = validateInput(title)
-  const messageValidation = validateInput(message)
-
-  if (!titleValidation.valid) throw new Error(`Invalid title: ${titleValidation.error}`)
-  if (!messageValidation.valid) throw new Error(`Invalid message: ${messageValidation.error}`)
-
-  const safeTitle = titleValidation.sanitized!
-  let safeMessage = messageValidation.sanitized!
-
-  const { cleaned, emotion } = extractEmotionalMarker(safeMessage)
-  safeMessage = cleaned
-
-  let voicePlayed = false
-  let voiceError: string | undefined
-
-  if (voiceEnabled && moduleConfig.elevenlabs_api_key) {
-    try {
-      const voice = voiceId || defaultVoiceId
-
-      // 3-tier voice settings resolution
-      let resolvedSettings: ElevenLabsVoiceSettings
-      let resolvedVolume: number
-
-      if (callerVoiceSettings && Object.keys(callerVoiceSettings).length > 0) {
-        // Tier 1: Caller provided explicit voice_settings
-        resolvedSettings = {
-          stability: callerVoiceSettings.stability ?? FALLBACK_VOICE_SETTINGS.stability,
-          similarity_boost: callerVoiceSettings.similarity_boost ?? FALLBACK_VOICE_SETTINGS.similarity_boost,
-          style: callerVoiceSettings.style ?? FALLBACK_VOICE_SETTINGS.style,
-          speed: callerVoiceSettings.speed ?? FALLBACK_VOICE_SETTINGS.speed,
-          use_speaker_boost: callerVoiceSettings.use_speaker_boost ?? FALLBACK_VOICE_SETTINGS.use_speaker_boost,
-        }
-        resolvedVolume = callerVolume ?? FALLBACK_VOLUME
-        log("info", "Voice settings: pass-through from caller")
-      } else {
-        // Tier 2/3: Look up by voiceId, fall back to main
-        const voiceEntry = voiceConfig.voicesByVoiceId[voice] || voiceConfig.voices.main
-        if (voiceEntry) {
-          resolvedSettings = {
-            stability: voiceEntry.stability,
-            similarity_boost: voiceEntry.similarity_boost,
-            style: voiceEntry.style,
-            speed: voiceEntry.speed,
-            use_speaker_boost: voiceEntry.use_speaker_boost,
-          }
-          resolvedVolume = callerVolume ?? voiceEntry.volume ?? FALLBACK_VOLUME
-          log("info", `Voice settings: from settings.json (${voiceEntry.voiceName || voice})`)
-        } else {
-          resolvedSettings = { ...FALLBACK_VOICE_SETTINGS }
-          resolvedVolume = callerVolume ?? FALLBACK_VOLUME
-          log("warn", `Voice settings: fallback defaults (no config found for ${voice})`)
-        }
-      }
-
-      // Emotional preset overlay — modifies stability + similarity_boost only
-      if (emotion && EMOTIONAL_PRESETS[emotion]) {
-        resolvedSettings = {
-          ...resolvedSettings,
-          stability: EMOTIONAL_PRESETS[emotion].stability,
-          similarity_boost: EMOTIONAL_PRESETS[emotion].similarity_boost,
-        }
-        log("info", `Voice emotion overlay: ${emotion}`)
-      }
-
-      log("info", `Voice: generating speech`, {
-        voiceId: voice,
-        speed: resolvedSettings.speed,
-        stability: resolvedSettings.stability,
-        boost: resolvedSettings.similarity_boost,
-        style: resolvedSettings.style,
-        volume: resolvedVolume,
-      })
-
-      const audioBuffer = await generateSpeech(safeMessage, voice, resolvedSettings)
-      await enqueuePlayback(() => playAudio(audioBuffer, resolvedVolume))
-      voicePlayed = true
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: failed to generate/play speech", { error: msg })
-      voiceError = msg
-    }
-  }
-
-  // macOS desktop notification
-  await showDesktopNotification(safeTitle, safeMessage)
-
-  return { voicePlayed, voiceError }
-}
-
-// ── JSON Error Response Helper ──
-
-function jsonResponse(body: Record<string, unknown>, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-    status,
-  })
-}
-
-function errorStatus(message: string): number {
-  return message.includes("Invalid") ? 400 : 500
-}
-
-// ── Public API ──
-
-/**
- * Initialize the voice module. Call once at startup before handling requests.
- */
+/** Initialize the voice module. Call once at startup. */
 export function startVoice(config: VoiceConfig): void {
-  // Resolve API key: config → env
-  if (!config.elevenlabs_api_key && process.env.ELEVENLABS_API_KEY) {
-    config.elevenlabs_api_key = process.env.ELEVENLABS_API_KEY
-  }
   moduleConfig = config
-
-  if (!config.enabled) {
-    log("info", "Voice module: disabled")
-    return
-  }
-
-  if (!config.elevenlabs_api_key) {
-    log("warn", "Voice module: ELEVENLABS_API_KEY not set in config or env")
-  }
-
-  // Load pronunciation rules
   loadPronunciations(config.pronunciations_path)
-
-  // Load voice config from settings.json
-  voiceConfig = loadVoiceConfigFromSettings()
-
-  // Resolve default voice ID: config override → settings.json → hardcoded fallback.
-  // The fallback must stay an ElevenLabs PREMADE voice ("Rachel") — it is the
-  // last resort on unconfigured fresh installs, and account-library or famous
-  // voices 401 there (famous_voice_not_permitted, nixfredOS#1461 bug 5).
-  defaultVoiceId = config.default_voice_id || voiceConfig.defaultVoiceId || "21m00Tcm4TlvDq8ikWAM"
-
-  initialized = true
-  log("info", "Voice module: initialized", {
-    defaultVoiceId,
-    pronunciationRules: pronunciationRules.length,
-    configuredVoices: Object.keys(voiceConfig.voices),
-    apiKeyConfigured: !!config.elevenlabs_api_key,
-  })
+  log("info", "Voice module: initialized", { engine: pickEngine(), switch: voiceOn() ? "on" : "off" })
 }
 
-/**
- * Health check for the voice subsystem.
- */
+/** Health for the voice subsystem. */
 export function voiceHealth(): Record<string, unknown> {
   return {
-    initialized,
-    enabled: moduleConfig.enabled,
-    voice_system: "ElevenLabs",
-    default_voice_id: defaultVoiceId,
-    api_key_configured: !!moduleConfig.elevenlabs_api_key,
-    pronunciation_rules: pronunciationRules.length,
-    configured_voices: Object.keys(voiceConfig.voices),
-    desktop_notifications: voiceConfig.desktopNotifications,
+    status: moduleConfig.enabled ? "healthy" : "disabled",
+    engine: pickEngine(),
+    enabled: voiceOn(),
+    platform: platform(),
   }
 }
 
-// ── Phase Capture: REMOVED ──
-//
-// Until 2026-04-27, /notify also wrote work.json `phase` and `phaseHistory` and
-// called setPhaseTab(). That was the second writer in a dual-source design with
-// ISASync.hook.ts (PostToolUse Edit/Write on ISA.md). It silently skipped when
-// the AI couldn't pass a resolvable session_id/slug — the dashboard then
-// "stuck" on whichever phase was last successfully captured.
-//
-// ISA frontmatter is now the SINGLE source of truth: AI edits ISA `phase:` →
-// ISASync syncs to work.json AND calls setPhaseTab. Voice is audio-only.
-//
-// If you're tempted to reintroduce a phase-capture path here, fix the AI's
-// ISA-edit discipline instead — that's the actual signal.
 /**
- * Handle an incoming HTTP request for voice routes.
- *
  * Routes:
- *   POST /notify              — main notification endpoint
- *   POST /notify/personality   — compatibility shim (Qwen3-TTS era)
- *   POST /pai                 — nixfredOS assistant notification
- *   GET  /voice/health        — voice subsystem health
+ *   POST /notify              {message, title?, progress?, voice_id?, voice_enabled?}
+ *   POST /notify/personality  plain alias of /notify (old callers)
+ *   GET  /speaking            {speaking, pending, last_end}  (polled; never rate limited)
+ *   GET  /voice/health        {status, engine, enabled, platform}
  *
  * Returns a Response for matched routes, or null if the route is not ours.
  */
 export async function handleVoiceRequest(req: Request): Promise<Response | null> {
-  const url = new URL(req.url)
-  const pathname = url.pathname
+  const { pathname } = new URL(req.url)
 
-  // CORS preflight for any of our routes
-  if (req.method === "OPTIONS" && ["/notify", "/notify/personality", "/pai", "/voice/health"].includes(pathname)) {
+  if (req.method === "OPTIONS" && ["/notify", "/notify/personality", "/speaking", "/voice/health"].includes(pathname)) {
     return new Response(null, { headers: CORS_HEADERS, status: 204 })
   }
-
-  // Rate limit check
-  const clientIp = req.headers.get("x-forwarded-for") || "localhost"
-
-  // GET /voice/health
-  if (pathname === "/voice/health" && req.method === "GET") {
-    return jsonResponse(voiceHealth(), 200)
+  if (req.method === "GET" && pathname === "/speaking") {
+    return jsonResponse({ speaking: pending > 0, pending, last_end: lastEnd })
   }
+  if (req.method === "GET" && pathname === "/voice/health") return jsonResponse(voiceHealth())
 
-  // All remaining routes are POST
-  if (req.method !== "POST") return null
+  if (req.method !== "POST" || (pathname !== "/notify" && pathname !== "/notify/personality")) return null
 
-  // Rate limit on POST routes
-  if (!checkRateLimit(clientIp)) {
-    return jsonResponse({ status: "error", message: "Rate limit exceeded" }, 429)
-  }
+  let body: any
+  try { body = await req.json() } catch { return jsonResponse({ status: "error", message: "bad json" }, 400) }
+  if (!body || typeof body !== "object") return jsonResponse({ status: "error", message: "bad json" }, 400)
 
-  // POST /notify
-  if (pathname === "/notify") {
-    try {
-      const data = await req.json()
-      const title = data.title || "nixfredOS Notification"
-      const message = data.message || "Task completed"
-      const voiceEnabled = data.voice_enabled !== false
-      const voiceId = data.voice_id || data.voice_name || null
-      const voiceSettings = data.voice_settings || null
-      const volume = data.volume ?? null
+  if (body.voice_enabled === false || !voiceOn()) return jsonResponse({ status: "off", message: "voice is OFF" })
 
-      if (voiceId && typeof voiceId !== "string") throw new Error("Invalid voice_id")
+  const text = speakable(String(body.message ?? ""))
+  if (!text) return jsonResponse({ status: "error", message: "nothing to say" }, 400)
+  const voiceId = typeof body.voice_id === "string" && body.voice_id ? body.voice_id : undefined
 
-      log("info", `Voice: notification "${title}" - "${message}"`, {
-        voiceEnabled,
-        voiceId: voiceId || defaultVoiceId,
-      })
-
-      const result = await sendNotification(title, message, voiceEnabled, voiceId, voiceSettings, volume)
-
-      if (voiceEnabled && !result.voicePlayed && result.voiceError) {
-        return jsonResponse({ status: "error", message: `TTS failed: ${result.voiceError}`, notification_sent: true }, 502)
-      }
-
-      return jsonResponse({ status: "success", message: "Notification sent" }, 200)
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: notification error", { error: msg })
-      return jsonResponse({ status: "error", message: "Notification failed" }, errorStatus(msg))
-    }
-  }
-
-  // POST /notify/personality — compatibility shim for Qwen3-TTS callers
-  if (pathname === "/notify/personality") {
-    try {
-      const data = await req.json()
-      const message = data.message || "Notification"
-
-      // Live-read voice ID from settings.json each call. Without this, pulse
-      // uses the defaultVoiceId cached at server startup — which is stale
-      // after the install wizard writes a new daidentity.voices.main.voiceId
-      // (the wizard runs AFTER pulse starts, so the cache holds the public
-      // template default instead of the user-picked voice). Live-read keeps
-      // /notify/personality honest with whatever the user last selected.
-      let voiceId: string | null = null
-      try {
-        const settingsFile = join(homedir(), ".claude", "settings.json")
-        const settings = JSON.parse(readFileSync(settingsFile, "utf-8"))
-        const main = settings?.daidentity?.voices?.main
-        const vid = (main?.voiceId || main?.VOICE_ID || main?.voice_id) as string | undefined
-        if (vid) voiceId = vid
-      } catch {
-        // Fall through — sendNotification will use the cached defaultVoiceId
-      }
-
-      log("info", `Voice: personality notification "${message}"`, { voiceId })
-      await sendNotification("nixfredOS Notification", message, true, voiceId)
-
-      return jsonResponse({ status: "success", message: "Personality notification sent" }, 200)
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: personality notification error", { error: msg })
-      return jsonResponse({ status: "error", message: "Notification failed" }, errorStatus(msg))
-    }
-  }
-
-  // POST /voice
-  if (pathname === "/voice") {
-    try {
-      const data = await req.json()
-      const title = data.title || "nixfredOS Assistant"
-      const message = data.message || "Task completed"
-
-      log("info", `Voice: nixfredOS notification "${title}" - "${message}"`)
-      await sendNotification(title, message, true, null)
-
-      return jsonResponse({ status: "success", message: "nixfredOS notification sent" }, 200)
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: nixfredOS notification error", { error: msg })
-      return jsonResponse({ status: "error", message: "Notification failed" }, errorStatus(msg))
-    }
-  }
-
-  // Not our route
-  return null
+  log("info", `Voice: speak${body.progress === true ? " (queued)" : ""}: "${text.slice(0, 60)}"`)
+  const done = enqueue(text, voiceId)
+  if (body.progress !== true) await done
+  return jsonResponse({ status: "success", message: body.progress === true ? "Queued" : "Spoken" })
 }

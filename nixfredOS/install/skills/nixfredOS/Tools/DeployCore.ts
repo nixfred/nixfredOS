@@ -22,7 +22,7 @@
  *   (dry-run by default — reports the plan per target without writing)
  */
 
-import { existsSync, mkdirSync, readdirSync } from "node:fs";
+import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, symlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { copyMissing, detectDevTree } from "./InstallEngine";
@@ -49,7 +49,7 @@ interface SkillConflict {
 }
 
 interface DeployResult {
-  what: "skills" | "runtime" | "memory" | "dependencies" | "nested-dependencies";
+  what: "skills" | "runtime" | "memory" | "voice-cli" | "dependencies" | "nested-dependencies";
   src: string;
   dst: string;
   present: boolean;
@@ -188,6 +188,39 @@ function scaffoldMemory(configRoot: string, apply: boolean): DeployResult {
       if (proc.exitCode === 0) r.copied++;
       else r.failures.push(`GenerateKnowledgeSchemaDoc exited ${proc.exitCode}: ${proc.stderr.toString().trim()}`);
     }
+  }
+  return r;
+}
+
+/**
+ * (c2) voice CLI on PATH: ~/.local/bin/nixfredos-voice → the deployed script.
+ * Additive only: an existing file or link at that name is left alone. Hooks and
+ * the assistant call `nixfredos-voice say ...`, so it must resolve on PATH.
+ */
+function linkVoiceCli(configRoot: string, home: string, apply: boolean): DeployResult {
+  const target = join(configRoot, "NIXFREDOS", "VOICE", "bin", "nixfredos-voice");
+  const binDir = join(home, ".local", "bin");
+  const link = join(binDir, "nixfredos-voice");
+  const r: DeployResult = { what: "voice-cli", src: target, dst: link, present: true, copied: 0, actions: [], blockers: [], failures: [] };
+  if (!apply) {
+    r.actions.push(`symlink ${link} → ${target}`);
+    return r;
+  }
+  if (!existsSync(target)) return r; // runtime not deployed (Core-only partial); nothing to link
+  try {
+    chmodSync(target, 0o755);
+    mkdirSync(binDir, { recursive: true });
+    let exists = false;
+    try { lstatSync(link); exists = true; } catch { /* absent */ }
+    if (!exists) {
+      symlinkSync(target, link);
+      r.copied++;
+    }
+    if (!(process.env.PATH || "").split(":").includes(binDir)) {
+      r.actions.push(`${binDir} is not on PATH: add it to your shell profile to use 'nixfredos-voice'`);
+    }
+  } catch (err) {
+    r.failures.push(`link ${link}: ${err instanceof Error ? err.message : String(err)}`);
   }
   return r;
 }
@@ -347,6 +380,7 @@ function main(): void {
     deploySkills(payloadInstall, configRoot, apply),
     deployRuntime(payloadInstall, configRoot, apply),
     scaffoldMemory(configRoot, apply),
+    linkVoiceCli(configRoot, home, apply),
     deployDependencies(payloadInstall, configRoot, apply),
     deployNestedDependencies(payloadInstall, configRoot, apply),
   ];

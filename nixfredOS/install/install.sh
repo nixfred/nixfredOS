@@ -138,6 +138,23 @@ sha256_of() {
   fi
 }
 
+# Voice is optional and OFF by default. List the speech engines this machine can
+# use (space separated, best first) so the installer can report them. Nothing here
+# requires ElevenLabs: macOS `say`, piper and espeak-ng all work without a key.
+voice_engines() {
+  local out=""
+  [ -n "${ELEVENLABS_API_KEY:-}" ] && out="$out elevenlabs"
+  [ "$(uname -s)" = "Darwin" ] && command -v say >/dev/null 2>&1 && out="$out say"
+  command -v piper >/dev/null 2>&1 && out="$out piper"
+  command -v espeak-ng >/dev/null 2>&1 && out="$out espeak-ng"
+  echo "${out# }"
+}
+voice_player() {
+  local p
+  if [ "$(uname -s)" = "Darwin" ]; then command -v afplay >/dev/null 2>&1 && echo afplay; return; fi
+  for p in mpv ffplay paplay; do command -v "$p" >/dev/null 2>&1 && { echo "$p"; return; }; done
+}
+
 printf "\n  ${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
 printf "  ${BOLD}${DARK_BLUE}nix${BLUE}fred${LIGHT_BLUE}OS${RESET}   ${BOLD}your AI operating system${RESET}      ${DIM}current state ${BLUE}→${DIM} ideal state${RESET}   ${DIM}·${RESET}   ${LIGHT_BLUE}v%s bootstrap${RESET}\n" "$NIXFREDOS_VERSION"
 printf "  ${LIGHT_BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n\n"
@@ -174,7 +191,10 @@ if [ "$CHECK_ONLY" = "1" ]; then
   if [ -n "$harness" ]; then success "AI harness:$harness"; else error "No AI coding harness found (Claude Code recommended)"; MISSING=1; fi
   printf "\n  ${BOLD}Optional${RESET}\n"
   if have ollama; then success "ollama (semantic memory recall available)"; else info "ollama not found: keyword recall only (https://ollama.com)"; fi
-  if [ -n "${ELEVENLABS_API_KEY:-}" ]; then success "ELEVENLABS_API_KEY set (voice available)"; else info "ELEVENLABS_API_KEY not set: voice off"; fi
+  ve="$(voice_engines)"; vp="$(voice_player)"
+  if [ -n "$ve" ]; then success "voice engines: $ve (voice stays OFF until you run: nixfredos-voice on)"
+  else info "no voice engine found: voice is optional (macOS has 'say'; Linux: apt/pacman/brew install espeak-ng)"; fi
+  if [ -z "$vp" ] && [ "$(uname -s)" != "Darwin" ]; then info "no audio player found for cloud voices (install mpv)"; fi
   printf "\n  ${DIM}Docker is never required.${RESET}\n\n"
   if [ "$MISSING" = "0" ]; then success "Ready to install nixfredOS $NIXFREDOS_TAG."; exit 0
   else error "Install the missing items above, then re-run."; exit 1; fi
@@ -497,6 +517,24 @@ else
     migrate_rc "$RC"
   done
   [ "$FOUND_STALE" = "0" ] && success "No stale pre-7.x launch aliases found."
+fi
+
+# ─── Voice (optional) ────────────────────────────────────────────
+# Report what is available. Never require ElevenLabs. Only ask when a human is at
+# the keyboard; otherwise leave voice OFF (no voice.json written).
+VOICE_ENGINES="$(voice_engines)"
+if [ -n "$VOICE_ENGINES" ]; then info "Voice engines available: ${BOLD}${VOICE_ENGINES}${RESET} (voice is optional)"
+else info "No voice engine found: voice stays off (optional; see NIXFREDOS/VOICE/README.md)"; fi
+VOICE_JSON="$CONFIG_ROOT/voice.json"
+if [ "$DRY_RUN" != "1" ] && [ -n "$VOICE_ENGINES" ] && [ ! -e "$VOICE_JSON" ] && [ -t 0 ] && [ -t 1 ] && [ -z "${CI:-}" ]; then
+  printf "  Enable spoken replies now? You can flip it any time with 'nixfredos-voice on|off'. [y/N] "
+  read -r VOICE_ANSWER || VOICE_ANSWER=""
+  case "$VOICE_ANSWER" in
+    [yY]*)
+      mkdir -p "$CONFIG_ROOT" && printf '{\n  "enabled": true,\n  "engine": "auto"\n}\n' > "$VOICE_JSON" \
+        && success "Voice ON (${VOICE_JSON/#$HOME/~}). It takes effect once Pulse is running." ;;
+    *) info "Voice left OFF." ;;
+  esac
 fi
 
 # ─── Step 6: Hand off to the agentic setup ───────────────────────

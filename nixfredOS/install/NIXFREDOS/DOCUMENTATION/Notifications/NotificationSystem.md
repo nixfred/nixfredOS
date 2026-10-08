@@ -8,9 +8,11 @@ version: 1.4.1
 
 **Voice notifications for nixfredOS workflows and task execution.**
 
-> **Infrastructure:** The voice notification endpoint (`http://localhost:31337/notify`) is served by the unified Pulse daemon (`~/.claude/NIXFREDOS/PULSE/`). Voice is implemented at `~/.claude/NIXFREDOS/PULSE/VoiceServer/voice.ts` and routed through Pulse -- there is no separate VoiceServer process. One daemon, one port, one launchd plist (`com.nixfredos.pulse`).
+> **Infrastructure:** The voice endpoint (`http://127.0.0.1:31337/notify`) is served by the unified Pulse daemon (`~/.claude/NIXFREDOS/PULSE/`). Voice is implemented at `~/.claude/NIXFREDOS/PULSE/VoiceServer/voice.ts` and routed through Pulse; there is no separate voice process. One daemon, one port. The user-facing switch, engines and CLI are documented in `NIXFREDOS/VOICE/README.md`.
 
-> **Pronunciation normalization:** Before any text reaches ElevenLabs it passes through two transforms — `applyPronunciations()` (literal term map from `NIXFREDOS/USER/PRINCIPAL/PRONUNCIATIONS.json`) wrapped around `disambiguateHomographs()` (`NIXFREDOS/PULSE/lib/homographs.ts`). The homograph stage exists because ElevenLabs guesses a reading from context and gets some words wrong; the worst offender is "live", where the broadcast/adjective sense (/laɪv/ — "the site is live", "live-verified") otherwise reads as the verb (/lɪv/ — "where you live"). It respells **only** context-matched broadcast occurrences to `lyve`, never a flat substitution, so verb uses ("live freely") stay correct. Adding a new spoken phrasing that reads wrong means adding a context regex, not a global replace. Applied by the VoiceServer (`voice.ts`) so every spoken notification reads identically.
+> **Switch first:** Voice is OFF until the user turns it on (`nixfredos-voice on`, which writes `~/.claude/voice.json`). A missing or invalid `voice.json` means OFF. When OFF, `/notify` answers `{"status":"off"}` and plays nothing, so a stray curl is harmless.
+
+> **Engines:** ElevenLabs is optional. Without it the server falls back to the OS-native engine (macOS `say`, then `piper`, then `espeak-ng`). Text is stripped of markdown, emoji and URLs before it is spoken. An optional exact-phrase map in `NIXFREDOS/USER/PRINCIPAL/PRONUNCIATIONS.json` (`{"phrase": "spoken text"}`) fixes words an engine reads badly.
 
 This system provides:
 - Voice feedback when workflows start
@@ -82,18 +84,18 @@ When executing an actual workflow file from a `Workflows/` directory:
 ```bash
 curl -s -X POST http://localhost:31337/notify \
   -H "Content-Type: application/json" \
-  -d '{"message": "Running the WORKFLOWNAME workflow in the SKILLNAME skill to ACTION", "voice_id": "{DA_IDENTITY.VOICEID}", "title": "{DA_IDENTITY.NAME}"}' \
+  -d '{"message": "Running the WORKFLOWNAME workflow in the SKILLNAME skill to ACTION", "title": "{DA_IDENTITY.NAME}", "progress": true}' \
   > /dev/null 2>&1 &
 ```
 
 **Parameters:**
 - `message` - The spoken text (workflow and skill name)
-- `voice_id` - ElevenLabs voice ID (default: {DA_IDENTITY.NAME}'s voice)
 - `title` - Display name for the notification
-- `phase` (optional) - ISA phase marker for session tracking. The phase vocabulary lives in ONE place — `NIXFREDOS/TOOLS/ascent.ts` (see `NIXFREDOS/DOCUMENTATION/Algorithm/AscentStates.md`); it is never hand-listed in a consumer or a doc. (The 8-station uppercase enum this parameter originally carried was retired 2026-07-14.)
-- `slug` (optional) - The ISA session slug. Used to route the phase write to the correct session. When absent, falls back to most-recently-updated non-complete session within 2-hour window.
+- `progress` (optional) - `true` queues the line and answers at once; otherwise the call returns after playback
+- `voice_id` (optional) - ElevenLabs voice id override; defaults to `voice.json` `elevenlabs_voice_id`, then the assistant identity
+- `voice_enabled` (optional) - `false` makes the call silent
 
-**Phase tracking:** `/notify` and the ISASync hook (ISA frontmatter edits) both feed session phase tracking; the ascent table in `NIXFREDOS/TOOLS/ascent.ts` derives every icon, color, and label from the phase key.
+Other endpoints: `GET /speaking` returns `{speaking, pending, last_end}` (used by the listener's echo guard), and `GET /voice/health` returns `{status, engine, enabled, platform}`. Lines never overlap: one serial queue speaks them in order.
 
 ---
 
@@ -101,21 +103,19 @@ curl -s -X POST http://localhost:31337/notify \
 
 **Workflow voice announcements are inline curls** — skills and workflows POST `curl -s -X POST http://localhost:31337/notify` at their own notable moments (skill invocation, long-run milestones). The per-phase announcement table keyed to effort tiers was retired with the modes/tiers system on 2026-07-11; how much a run narrates is discovered from the work, not read off a tier.
 
-**Task completion voice** is handled by `VoiceCompletion.hook.ts` → `handlers/VoiceNotification.ts`, which extracts the `🗣️` line from the response and POSTs to the Pulse `/notify` endpoint at `http://localhost:31337`.
+**Task completion voice** is handled by `VoiceCompletion.hook.ts` → `handlers/VoiceNotification.ts`, which extracts the `🗣️` line from the response and POSTs to the Pulse `/notify` endpoint. It obeys the `voice.json` switch and skips spoken turns (below).
 
-**Scheduled/cadence jobs never voice-notify** (principal directive, 2026-08-14). `/notify` defaults voice ON, so every cadence caller (launchd, cron, Hermes jobs, recurring tools) passes `voice_enabled: false` explicitly. A PULSE cron job with `output = "voice"` is suppressed by `dispatchSingle` in `NIXFREDOS/PULSE/lib.ts` unless `PULSE_CRON_VOICE=1` is set. Cadence channels are the silent banner, logs, or NotifyPrincipal SMS; interactive-session voice (workflow curls, completion 🗣️) is unaffected.
+**Spoken turns:** a prompt that begins with `🎙️` was spoken by the user through the listener (`nixfredos-voice listen on`). `PromptProcessing.hook.ts` then tells the assistant to answer first with `nixfredos-voice say --bg "..."`, writes a per-session flag, and `VoiceCompletion.hook.ts` skips (and deletes the flag) so the answer is not spoken twice. `MemoryTurnStart.hook.ts` skips recall for these prompts to keep the round trip short. `VoiceEgressGuard.hook.ts` blocks `nixfredos-voice say|test` from subagents and headless sessions.
+
+**Scheduled/cadence jobs never voice-notify** (principal directive, 2026-08-14). Every cadence caller (launchd, cron, Hermes jobs, recurring tools) passes `voice_enabled: false` explicitly. A PULSE cron job with `output = "voice"` is suppressed by `dispatchSingle` in `NIXFREDOS/PULSE/lib.ts` unless `PULSE_CRON_VOICE=1` is set. Cadence channels are the silent banner, logs, or NotifyPrincipal SMS; interactive-session voice (workflow curls, completion 🗣️) is unaffected.
 
 ---
 
-## Voice IDs
+## Voice Identity
 
-| Agent | Voice ID | Notes |
-|-------|----------|-------|
-| **{DA_IDENTITY.NAME}** (default) | `{DA_IDENTITY.VOICEID}` | Use for most workflows |
+**The DA is the only speaker.** Subagents never emit voice; the DA narrates every completion, so there is no per-subagent voice routing. The `voiceId:`/`voice:` frontmatter in `agents/*.md` has no consumer in code; it is persona flavor, not configuration.
 
-**The DA is the only speaker.** Subagents never emit voice — the DA narrates every completion, so there is no per-subagent voice routing to configure. The `voiceId:`/`voice:` frontmatter in `agents/*.md` has **no consumer in code** (verified 2026-07-27: nothing under `hooks/`, `NIXFREDOS/TOOLS/`, or `NIXFREDOS/PULSE/` parses agent frontmatter for voice); it is persona flavor, not configuration, and two agents currently share one ID without consequence.
-
-**Voice config:** canonical in `NIXFREDOS/USER/CONFIG/NIXFREDOS_CONFIG.toml` `[da.voices.main]`; hooks read the runtime mirror at `~/.claude/settings.json` → `daidentity.voices.main.voiceId`. The former "Priya (Artist)" row was removed 2026-07-27 — that agent does not exist.
+**ElevenLabs voice id** (only needed if you use ElevenLabs): `~/.claude/voice.json` `elevenlabs_voice_id`, else `NIXFREDOS/USER/CONFIG/NIXFREDOS_CONFIG.toml` `[da.voices.main]`, mirrored at runtime to `~/.claude/settings.json` → `daidentity.voices.main.voiceId`. Other engines ignore it.
 
 ---
 
@@ -344,7 +344,7 @@ flowchart TD
     B -->|longTask / backgroundAgent| E[Voice + ntfy push]
     B -->|error| F[Voice + ntfy push]
     B -->|security| G[Voice + ntfy + Discord]
-    D --> H[Speak the line via ElevenLabs]
+    D --> H[Speak the line via the configured engine]
     E --> H
     F --> H
     E --> I[Phone buzzes]

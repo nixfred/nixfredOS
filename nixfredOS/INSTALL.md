@@ -59,7 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/nixfred/nixfredOS/main/nixfredOS/in
 | Extra | What it adds |
 |---|---|
 | [Ollama](https://ollama.com) (native app, no Docker) | semantic, meaning-based memory recall. Apple Silicon or a GPU helps. |
-| ElevenLabs API key | spoken responses (voice) |
+| A speech engine (ElevenLabs key, macOS `say`, `piper` or `espeak-ng`) | spoken responses (voice). Off by default; ElevenLabs is optional. |
 
 **Never required:** Docker, a cloud account, telemetry. Nothing in nixfredOS runs in a container.
 
@@ -157,7 +157,7 @@ Pulse, worksweep, and derivedsync install as **launchd** agents on macOS and as 
 
 ### 8.5 Capability check — probe what doctrine assumes (Doctor)
 
-nixfredOS doctrine leans on a few **external tools** the core install does not ship: a cross-vendor audit CLI (`codex`), a real browser for web verification (Interceptor), Cloudflare/wrangler for scheduled cloud flows, ElevenLabs for voice. Nothing above installed them, and the features that depend on them must degrade *loudly*, not silently. After Core lands, run the doctor:
+nixfredOS doctrine leans on a few **external tools** the core install does not ship: a cross-vendor audit CLI (`codex`), a real browser for web verification (Interceptor), Cloudflare/wrangler for scheduled cloud flows, and an optional speech engine for voice. Nothing above installed them, and the features that depend on them must degrade *loudly*, not silently. After Core lands, run the doctor:
 
 ```
 bun <configRoot>/NIXFREDOS/TOOLS/Doctor.ts

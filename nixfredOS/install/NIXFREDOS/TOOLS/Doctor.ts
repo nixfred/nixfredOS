@@ -135,6 +135,33 @@ function envKey(name: string): string | null {
   return null;
 }
 
+// ── voice (optional) ─────────────────────────────────────────────────────────
+// Mirrors the engine order in PULSE/VoiceServer/voice.ts: elevenlabs, say,
+// piper, espeak. voice.json is the switch and engine config.
+function voiceJson(): any | null {
+  try { return JSON.parse(readFileSync(join(CONFIG_ROOT, 'voice.json'), 'utf8')); } catch { return null; }
+}
+
+function elevenLabsVoiceId(): string | null {
+  const v = voiceJson()?.elevenlabs_voice_id;
+  if (typeof v === 'string' && v) return v;
+  try {
+    const main = JSON.parse(readFileSync(join(CONFIG_ROOT, 'settings.json'), 'utf8'))?.daidentity?.voices?.main;
+    const id = main?.voiceId || main?.voice_id;
+    if (typeof id === 'string' && id) return id;
+  } catch {}
+  return null;
+}
+
+function voiceEngine(): 'elevenlabs' | 'say' | 'piper' | 'espeak' | 'none' {
+  if (envKey('ELEVENLABS_API_KEY') && elevenLabsVoiceId()) return 'elevenlabs';
+  if (process.platform === 'darwin') return 'say';
+  const model = voiceJson()?.piper_model;
+  if (which('piper') && typeof model === 'string' && existsSync(model)) return 'piper';
+  if (which('espeak-ng')) return 'espeak';
+  return 'none';
+}
+
 // ── shadow-$HOME trees (public issue #1485, @vanvonlj; class: #1404/#1451) ───
 // Pre-#1451 installs interpolated the literal string "$HOME" into paths, so
 // every project directory a session ran in grew a `$HOME/.claude/NIXFREDOS/MEMORY`
@@ -409,27 +436,28 @@ const CAPS: CapSpec[] = [
   },
   {
     id: 'voice',
-    title: 'Voice notifications (ElevenLabs)',
-    powers: 'spoken notifications via the Pulse voice server',
+    title: 'Voice (optional)',
+    powers: 'spoken replies via the Pulse voice endpoint: ElevenLabs if configured, else the OS-native engine',
     ttlHours: 24,
-    configured: () => !!envKey('ELEVENLABS_API_KEY'),
+    configured: () => !!voiceJson() || !!envKey('ELEVENLABS_API_KEY'),
     probeOffline: async () => {
-      const key = envKey('ELEVENLABS_API_KEY');
-      if (!key) return { ok: false, detail: 'no ELEVENLABS_API_KEY in env or .env' };
-      const voiceId = envKey('ELEVENLABS_VOICE_ID');
-      return voiceId
-        ? { ok: true, detail: 'API key and voice id configured' }
-        : { ok: false, detail: 'API key set but no ELEVENLABS_VOICE_ID configured' };
+      const engine = voiceEngine();
+      const sw = voiceJson()?.enabled === true ? 'switch ON' : 'switch OFF (nixfredos-voice on)';
+      return engine === 'none'
+        ? { ok: false, detail: `no speech engine found (${sw})` }
+        : { ok: true, detail: `engine: ${engine}, ${sw}` };
     },
     probeNetwork: async () => {
+      // Only ElevenLabs needs a network probe; OS-native engines are local.
+      if (voiceEngine() !== 'elevenlabs') return { ok: true, detail: `local engine (${voiceEngine()}), no network needed` };
       const key = envKey('ELEVENLABS_API_KEY');
-      const voiceId = envKey('ELEVENLABS_VOICE_ID');
+      const voiceId = elevenLabsVoiceId();
       if (!key || !voiceId) return { ok: false, detail: 'key or voice id missing' };
       // Probe the TTS endpoint itself, not /v1/voices metadata: scoped keys
       // (TTS-only permission) 401 on metadata while TTS works, and famous
       // voices 401 on TTS while metadata looks fine (#1461 bug 5). The only
       // honest probe is the exact path notifications use. Cost: a 2-char
-      // synthesis — negligible, and only for opted-in configured installs.
+      // synthesis, negligible, and only for opted-in configured installs.
       try {
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), PROBE_TIMEOUT_MS);
@@ -442,20 +470,19 @@ const CAPS: CapSpec[] = [
         if (res.ok) return { ok: true, detail: 'TTS round-trip OK (real synthesis on the notification path)' };
         const errText = (await res.text()).slice(0, 200);
         if (errText.includes('famous_voice_not_permitted')) {
-          return { ok: false, detail: 'configured voice is a famous voice — not usable via API TTS' };
+          return { ok: false, detail: 'configured voice is a famous voice, not usable via API TTS' };
         }
         // Plan-tier restriction, not quota (public issue #1496, @waveman2020-sudo):
-        // free-tier keys 402 with paid_plan_required on ANY library voice — swapping
-        // voices or waiting for quota reset does not fix it.
+        // free-tier keys 402 with paid_plan_required on ANY library voice.
         if (errText.includes('paid_plan_required')) {
-          return { ok: false, detail: 'free-tier ElevenLabs plan cannot use library voices via API — upgrade the plan or use a premade/cloned voice' };
+          return { ok: false, detail: 'free-tier ElevenLabs plan cannot use library voices via API: upgrade the plan or use a premade/cloned voice' };
         }
         return { ok: false, detail: `TTS failed (${res.status}): ${errText.slice(0, 120)}` };
       } catch {
         return { ok: false, detail: 'ElevenLabs unreachable (offline or timeout)' };
       }
     },
-    fixCmd: 'set ELEVENLABS_VOICE_ID to an API-permitted (premade/cloned) voice in <configRoot>/.env',
+    fixCmd: 'install an engine (macOS: built in; Linux: espeak-ng or piper, plus mpv) or see NIXFREDOS/VOICE/README.md',
   },
 
   // ── external binaries shipped code shells out to ───────────────────────────
