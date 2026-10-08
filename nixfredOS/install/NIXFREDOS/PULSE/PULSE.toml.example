@@ -14,9 +14,9 @@ observability = true
 # my_module = true
 
 [voice]
-enabled = false
-# voice_id = "YOUR_ELEVENLABS_VOICE_ID"
-# api_key_env = "ELEVENLABS_API_KEY"
+# Loads the voice module. Whether it SPEAKS is the user's switch in
+# ~/.claude/voice.json (nixfredos-voice on|off), OFF by default.
+enabled = true
 
 [notifications]
 enabled = true
