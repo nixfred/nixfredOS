@@ -47,7 +47,7 @@ import { paiPath } from './lib/paths';
 import { updateSessionNameInWorkJson, upsertSession } from './lib/isa-utils';
 import { isDesktopChannel, logSkippedVoice, getNotificationChannel } from './lib/notification-channel';
 import { PULSE_BASE } from '../NIXFREDOS/PULSE/endpoint';
-import { isSpokenPrompt, readVoiceSwitch, setSpokenTurnFlag } from './lib/voice-switch';
+import { isSpokenPrompt, readVoiceSwitch, setSpokenTurnFlag, spokenOrigin } from './lib/voice-switch';
 import { homedir } from "node:os";
 
 // Normalize env path vars that Claude Code injects without shell expansion (nixfredOS#1404)
@@ -892,17 +892,21 @@ async function main() {
 
     // ── Spoken prompt (🎙️): the user talked to the listener ──
     // Answer aloud FIRST, keep the round trip short, and tell VoiceCompletion
-    // not to repeat the answer. Fires when the voice switch is on, or when a
-    // remote speaker is configured (the speaker host plays it).
+    // not to repeat the answer. A tagged prompt ("🎙️ <host>: ...") is answered
+    // on the machine that heard it (say --to), which may not be this one. An
+    // untagged one fires when the voice switch is on or a remote speaker is
+    // configured (the speaker host plays it).
     const spokenTurn = isSpokenPrompt(prompt);
     if (spokenTurn) {
       const sw = readVoiceSwitch();
-      if ((sw.enabled || sw.speaker) && (process.env.NIXFREDOS_VOICE || '').toLowerCase() !== 'off') {
+      const origin = spokenOrigin(prompt);
+      if ((origin || sw.enabled || sw.listen || sw.speaker) && (process.env.NIXFREDOS_VOICE || '').toLowerCase() !== 'off') {
         setSpokenTurnFlag(sessionId);
+        const sayCmd = origin ? `nixfredos-voice say --to ${origin} --bg` : 'nixfredos-voice say --bg';
         process.stdout.write(
           '<nixfredos-spoken-turn>\n' +
-          'The user SPOKE this prompt aloud (it begins with the microphone mark). Reply by voice:\n' +
-          '1. Your FIRST action is Bash: nixfredos-voice say --bg "<your spoken answer>" - plain spoken sentences, no markdown, no lists, no code, no URLs.\n' +
+          'The user SPOKE this prompt aloud (it begins with the microphone mark' + (origin ? `, heard on ${origin}` : '') + '). Reply by voice:\n' +
+          `1. Your FIRST action is Bash: ${sayCmd} "<your spoken answer>" - plain spoken sentences, no markdown, no lists, no code, no URLs.\n` +
           '2. If the task needs tools, say a few words first ("checking"), then use them. Keep the spoken part short.\n' +
           '3. Put details, code and links on screen as usual.\n' +
           '4. Do NOT end this turn with a voice line; the completion hook is skipped for spoken turns.\n' +

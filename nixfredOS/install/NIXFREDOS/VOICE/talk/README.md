@@ -2,13 +2,14 @@
 
 Hands-free voice input for Claude Code. You say the assistant's name and a
 request; the words are typed into the Claude session you are looking at as
-`🎙️ <words>` + Enter. Hooks on the other side react to the 🎙️ prefix, and the
+`🎙️ <this machine>: <words>` + Enter. Hooks on the other side react to the 🎙️ prefix, and the
 assistant answers out loud through the voice server.
 
 Linux is the supported path. **macOS support is EXPERIMENTAL and untested.**
 
-It does nothing unless `~/.claude/voice.json` says `"enabled": true` (fail
-closed). It is normally run by `nixfredos-voice listen on|off|status`, which
+It does nothing unless `~/.claude/voice.json` says `"enabled": true` or
+`"listen": true` (fail closed). `"listen"` is for a machine whose agent voice is
+off: the listener runs, and only answers to what you say are spoken. It is normally run by `nixfredos-voice listen on|off|status`, which
 starts `bun <install>/NIXFREDOS/VOICE/talk/src/listen.ts`.
 
 ## How it works
@@ -20,7 +21,7 @@ mic (30 ms frames, 16 kHz mono)
   -> whisper-server  local speech-to-text (opening 2.5 s first, then the whole thing)
   -> wake word       the utterance must START with the assistant's name
   -> target          the Claude session you are looking at
-  -> type            "🎙️ <words>" + Enter
+  -> type            "🎙️ <this machine>: <words>" + Enter
 ```
 
 - Everything runs locally. Room audio never leaves the machine; whisper-server
@@ -32,6 +33,9 @@ mic (30 ms frames, 16 kHz mono)
   (name first, optionally after "hey/ok"). When the voice print has already
   confirmed it is you, a loose mode also accepts near-misses (edit distance of
   2 or less, names of 4+ characters) among the first 4 words.
+- **Answers play where you spoke.** The machine tag tells the session to
+  answer with `nixfredos-voice say --to <machine>`, so a session on another
+  machine (reached through ssh + herdr) answers on the speakers in front of you.
 - Spoken lines (errors like "Which session?") go to the voice server:
   `POST /notify`, default `http://127.0.0.1:31337` (override with `PULSE_URL`).
 - Logs: `~/.local/state/nixfredos-voice/listen.log`; timings in `listen.jsonl`.
@@ -63,17 +67,32 @@ The mic is `ffmpeg -f avfoundation -i ":0"` (`NIXFREDOS_MIC` picks another
 device). The focused window is found by asking each kitty socket which OS
 window `is_focused`; there is no hyprctl.
 
+## Pick the mic
+
+The listener records from the default PipeWire source unless you pin one, which
+keeps it on the right mic when a call or another app changes the default:
+
+```bash
+pactl list sources short                      # find the node name
+# then in ~/.claude/voice.json:  "mic": "alsa_input.usb-..."
+# or for one run:                NIXFREDOS_VOICE_MIC_TARGET=alsa_input.usb-...
+```
+
+A USB dynamic mic beats a webcam or laptop mic: it hears you and much less of the room.
+
 ## Enroll your voice print
 
-Stop the listener first so it does not hear the takes.
+Stop the listener first so it does not hear the takes. Enroll on each machine
+you talk to, with the mic you will use there.
 
 ```bash
 bun scripts/enroll.ts --record 5        # the voice server reads 5 lines, you repeat each
 bun scripts/enroll.ts --from a.pcm ...  # or raw 16 kHz mono s16le takes
 ```
 
-The print is a 192-number average stored at `~/.config/nixfredos-voice/voiceprint.json`
-(mode 0600). It is biometric data: do not share or commit it. Threshold 0.35 is
+The print is a 192-number average stored for this machine at
+`~/.config/nixfredos-voice/voiceprint.<host>.json` (mode 0600). The listener
+uses this machine's print first and falls back to `voiceprint.json`. It is biometric data: do not share or commit it. Threshold 0.35 is
 provisional; the listener logs the scores it sees every 10 s so you can tune.
 
 ## Words it gets wrong
@@ -96,13 +115,18 @@ Speech-to-text mishears names and jargon ("Omarchy" comes out as "Amachi", "Hypr
   are not typed; you are asked to repeat.
 - **Only into Claude.** A kitty window is typed into only if its foreground
   process is `claude`; a herdr pane only if its agent is `claude`. Never a bare shell.
+- **herdr is confirmed against the screen, local or remote.** herdr's focused
+  pane follows whichever attached client acted last, so with two clients (here
+  and over ssh) it can point at the wrong pane. The candidates are checked
+  against this window's screen text (below), and a herdr window that cannot be
+  resolved types nothing: no fallback to another window.
 - **herdr refuses blocked panes.** If the Claude is waiting on a question or
   approval, nothing is typed and you hear why.
 - **"Which session?" instead of guessing.** With no focused Claude window the
   rule is: the only Claude window, else the last one used, else ask.
 - **An ssh window that cannot be resolved types nothing.** If the focused
   window runs `ssh <host>` it never falls back to a local window.
-- **Remote herdr is confirmed against the screen.** The window title can be stale
+- **How the screen check works.** The window title can be stale
   and the server's global focus can belong to another client, so the candidates
   (the global focused pane and the title workspace's focused pane, Claude panes
   only) each have their recent output (`pane read --source recent --lines 30`)

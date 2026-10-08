@@ -1,13 +1,17 @@
 /**
  * voice-switch.ts — the voice on/off switch and spoken-turn flag, shared by hooks.
  *
- * Switch: <configRoot>/voice.json  {"enabled": bool, "speaker"?: host, ...}
+ * Switch: <configRoot>/voice.json  {"enabled": bool, "listen"?: bool, "speaker"?: host, ...}
+ * "listen": the microphone listener runs here, and prompts it typed are answered
+ * aloud even when "enabled" (agent voice) is false.
  * Fail closed: a missing, unreadable or invalid file means OFF. The env var
  * NIXFREDOS_VOICE=off forces OFF regardless of the file. Headless and subagent
  * contexts are gated separately by notification-channel.ts and subagent.ts.
  *
  * Spoken turn: a prompt that begins with the microphone emoji was spoken by the
- * user through the listener. PromptProcessing writes a per-session flag so the
+ * user through the listener: "🎙️ <origin host>: <words>" (older listeners send
+ * "🎙️ <words>"). The origin is the machine that heard the user, where the
+ * answer should play. PromptProcessing writes a per-session flag so the
  * Stop hook does not speak a second, redundant completion line.
  */
 
@@ -20,6 +24,7 @@ export const SPOKEN_PREFIX = '🎙️';
 
 export interface VoiceSwitch {
   enabled: boolean;
+  listen?: boolean;
   speaker?: string;
 }
 
@@ -28,7 +33,7 @@ export function readVoiceSwitch(): VoiceSwitch {
     const c = JSON.parse(readFileSync(join(getClaudeDir(), 'voice.json'), 'utf-8'));
     if (!c || typeof c !== 'object') return { enabled: false };
     const speaker = typeof c.speaker === 'string' && c.speaker.trim() ? c.speaker.trim() : undefined;
-    return { enabled: c.enabled === true, speaker };
+    return { enabled: c.enabled === true, listen: c.listen === true, speaker };
   } catch {
     return { enabled: false };
   }
@@ -42,6 +47,16 @@ export function isVoiceEnabled(): boolean {
 
 export function isSpokenPrompt(prompt: string): boolean {
   return prompt.trimStart().startsWith(SPOKEN_PREFIX);
+}
+
+/**
+ * The machine that heard a spoken prompt, from "🎙️ <host>: <words>", or null
+ * (no tag, or not safe to hand to ssh). Same pattern as the listener's
+ * NIXFREDOS/VOICE/talk/src/spoken.ts.
+ */
+export function spokenOrigin(prompt: string): string | null {
+  const m = /^\u{1F399}\u{FE0F}?\s*([A-Za-z0-9][A-Za-z0-9_-]{0,62}):\s/u.exec(prompt.trimStart());
+  return m ? m[1]! : null;
 }
 
 function flagPath(sessionId: string): string {

@@ -9,7 +9,11 @@ import { dirname, join } from 'path'
 import { PATHS, SPEAKER_MODEL } from './config'
 
 export const MODEL = join(PATHS.models, SPEAKER_MODEL)
-export const PRINT_FILE = PATHS.voiceprint
+// One print per machine: a print enrolled on one mic and room scores lower on
+// another. Enrollment writes this machine's file; the listener reads it first
+// and falls back to the shared voiceprint.json.
+export const PRINT_FILE = PATHS.hostVoiceprint
+export const FALLBACK_PRINT_FILE = PATHS.voiceprint
 export const DEFAULT_THRESHOLD = 0.35
 
 export function cosine(a: Float32Array | number[], b: Float32Array | number[]): number {
@@ -29,14 +33,18 @@ export class VoicePrint {
   private ex: any
   centroid: number[] | null = null
   threshold = DEFAULT_THRESHOLD
+  /** The file the print was loaded from, or null. */
+  source: string | null = null
 
   constructor(model = MODEL) {
     if (!existsSync(model)) throw new Error(`voiceprint model missing: ${model} (run scripts/setup.ts)`)
     this.ex = new sherpa.SpeakerEmbeddingExtractor({ model, numThreads: 2, debug: false, provider: 'cpu' })
-    if (existsSync(PRINT_FILE)) {
-      const j = JSON.parse(readFileSync(PRINT_FILE, 'utf8'))
+    const file = [PRINT_FILE, FALLBACK_PRINT_FILE].find(f => existsSync(f))
+    if (file) {
+      const j = JSON.parse(readFileSync(file, 'utf8'))
       this.centroid = j.centroid
       this.threshold = j.threshold ?? DEFAULT_THRESHOLD
+      this.source = file
     }
   }
 
@@ -68,6 +76,7 @@ export class VoicePrint {
     mkdirSync(dirname(PRINT_FILE), { recursive: true, mode: 0o700 })
     writeFileSync(PRINT_FILE, JSON.stringify({ created: new Date().toISOString(), clips: clips.length, threshold, selfScores, centroid: this.centroid }), { mode: 0o600 })
     chmodSync(PRINT_FILE, 0o600) // writeFileSync's mode only applies to new files
+    this.source = PRINT_FILE
     return selfScores
   }
 }

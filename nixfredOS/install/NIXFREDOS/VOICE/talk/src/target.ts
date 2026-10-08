@@ -39,6 +39,25 @@ export function pickHerdrPane(snapshot: any, workspaceLabel: string): PanePick |
 }
 
 /**
+ * The herdr panes the user may be looking at, Claude panes only: the server's
+ * global focused pane, and the focused pane of the workspace named in the window
+ * title. Either can be wrong when several clients are attached (locally and
+ * over ssh), so the caller confirms them against the screen (pickByScreen).
+ */
+export function herdrCandidates(snapshot: any, title: string): Array<{ pane_id: string; agent_status: string | null }> {
+  const claudePane = (id: string | undefined) => (snapshot?.panes ?? []).find((p: any) => p.pane_id === id && p.agent === 'claude')
+  const cands = new Map<string, { pane_id: string; agent_status: string | null }>()
+  const add = (p: any) => { if (p) cands.set(p.pane_id, { pane_id: p.pane_id, agent_status: p.agent_status ?? null }) }
+  add(claudePane(snapshot?.focused_pane_id))
+  const label = workspaceFromTitle(title)
+  if (label) {
+    const pick = pickHerdrPane(snapshot ?? {}, label)
+    if (!('error' in pick)) add(claudePane(pick.pane_id))
+  }
+  return [...cands.values()]
+}
+
+/**
  * The kitty socket that belongs to a kitty process: `<dir>/<anything>kitty<anything>-<pid>`
  * (kitty's `listen_on unix:/run/user/1000/kitty-{kitty_pid}` convention).
  * `names` are the file names in the socket directory.

@@ -2,11 +2,15 @@
 // Build your voice print.
 //   bun scripts/enroll.ts --from a.pcm b.pcm ...  enroll from raw 16 kHz s16le takes
 //   bun scripts/enroll.ts --record 5              the voice server reads 5 lines aloud,
-//                                                 you repeat each one; recorded from the default mic
+//                                                 you repeat each one; recorded from the listener's mic
+//                                                 (NIXFREDOS_VOICE_MIC_TARGET, voice.json "mic", else the default)
+// The print is saved for THIS machine (voiceprint.<host>.json): enroll on each
+// machine you talk to, with the mic you will use there.
 // Only voiced audio counts: each take is cut into utterances by the same VAD the
 // listener uses, and utterances under 1.5 s are skipped (noisy embeddings).
 // Stop the listener first (`nixfredos-voice listen off`) so it does not hear the takes.
 import { EnergyVad, FRAME_MS, FRAME_SAMPLES } from '../src/ears'
+import { loadSwitch } from '../src/config'
 import { recordSeconds } from '../src/mic'
 import { speakAndWait } from '../src/pulse'
 import { VoicePrint, PRINT_FILE } from '../src/voiceprint'
@@ -34,6 +38,7 @@ function utterances(pcm: Int16Array): Int16Array[] {
 }
 
 const vp = new VoicePrint()
+const mic = loadSwitch().mic
 const clips: Int16Array[] = []
 const i = process.argv.indexOf('--from')
 if (i > 0) {
@@ -49,12 +54,12 @@ if (i > 0) {
 const r = process.argv.indexOf('--record')
 if (r > 0) {
   const n = Math.min(Number(process.argv[r + 1] || 5), LINES.length)
-  console.log(`Reading ${n} lines through the voice server. After each one, say it back.`)
+  console.log(`Reading ${n} lines through the voice server. After each one, say it back. Mic: ${mic ?? 'default source'}`)
   await speakAndWait(`Voice print. I will read ${n} lines. After each one, say it back to me.`)
   for (const line of LINES.slice(0, n)) {
     console.log(`  "${line}"`)
     await speakAndWait(line) // waits: the mic opens only after the line is done
-    const u = utterances(recordSeconds(6))
+    const u = utterances(recordSeconds(6, mic))
     console.log(`    ${u.length} voiced utterance(s)`)
     clips.push(...u)
   }

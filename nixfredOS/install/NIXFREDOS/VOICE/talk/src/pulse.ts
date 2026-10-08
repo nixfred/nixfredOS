@@ -11,11 +11,16 @@ export async function getSpeaking(base = voiceServer()): Promise<Speaking> {
   return await res.json() as Speaking
 }
 
-/** Fire and forget: speak a line through the voice server. */
+/**
+ * Fire and forget: speak a line through the voice server. Every line the
+ * listener says answers something the user just said at THIS machine, so it is
+ * marked spoken: it plays here even when the machine's agent voice is off
+ * (voice.json "listen": true) and is never forwarded to a "speaker" host.
+ */
 export function notify(message: string, title = 'Voice', base = voiceServer()): void {
   fetch(`${base}/notify`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, title, progress: true }),
+    body: JSON.stringify({ message, title, progress: true, spoken: true }),
     signal: AbortSignal.timeout(3000),
   }).catch(() => {})
 }

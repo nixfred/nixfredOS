@@ -51,7 +51,10 @@ ElevenLabs and piper produce an audio file that needs a player. `say` and `espea
   "say_voice": "",
   "piper_model": "",
   "volume": 1.0,
-  "speaker": ""
+  "speaker": "",
+  "listen": false,
+  "wake_word": "",
+  "mic": ""
 }
 ```
 
@@ -62,12 +65,14 @@ Every key except `enabled` is optional.
 - Headless sessions (scheduled jobs) and subagents never speak, whatever the file says.
 - `elevenlabs_voice_id` falls back to the assistant identity (`settings.json` `daidentity.voices.main.voiceId`).
 - `speaker` names another machine. When set and different from this host, the line is sent there over `ssh` (text on stdin, key-based login only) and nothing plays locally. That machine needs nixfredOS and a working voice of its own.
+- `listen` lets the microphone listener run on this machine, and lets answers to what you **say** here play here, even when `enabled` is false. Completions and notifications still follow `enabled`. `nixfredos-voice listen on|off` sets it.
+- `wake_word` is the name the listener waits for (default: the assistant name). `mic` pins the listener to one PipeWire source (or set `NIXFREDOS_VOICE_MIC_TARGET`). See `talk/README.md`.
 
 ## Endpoints (Pulse, 127.0.0.1:31337)
 
 | Route | What it does |
 |-------|--------------|
-| `POST /notify` | `{message, title?, progress?, voice_id?, voice_enabled?}`. `progress: true` queues the line and returns at once; otherwise it returns after playback. `voice_enabled: false`, or switch OFF, answers `{"status":"off"}` and stays silent. |
+| `POST /notify` | `{message, title?, progress?, voice_id?, voice_enabled?, spoken?}`. `progress: true` queues the line and returns at once; otherwise it returns after playback. `voice_enabled: false`, or switch OFF, answers `{"status":"off"}` and stays silent. `spoken: true` marks an answer to something the user said at this machine: it also plays when `listen` is on, and always plays here (never forwarded to `speaker`). |
 | `POST /notify/personality` | Plain alias of `/notify`, kept for old callers. |
 | `GET /speaking` | `{speaking, pending, last_end}`. Never rate limited; the listener polls it. |
 | `GET /voice/health` | `{status, engine, enabled, platform}`. |
@@ -80,8 +85,9 @@ One serial queue: a line never overlaps another.
 nixfredos-voice on | off
 nixfredos-voice status                exit 0 if ON, 1 if OFF
 nixfredos-voice say [--bg] <message>  --bg queues and returns at once; --stdin reads the message from stdin
+nixfredos-voice say --to <host> ...   answer a spoken prompt on the machine that heard it (here, or over ssh)
 nixfredos-voice test
-nixfredos-voice listen on|off|status  run the microphone listener as a background service
+nixfredos-voice listen on|off|status  run the microphone listener as a background service (on/off also set "listen")
 ```
 
 `listen` runs `NIXFREDOS/VOICE/talk/src/listen.ts` under `systemd --user` on Linux (unit `nixfredos-listen`, restarts on failure, low CPU priority) and under `launchd` on macOS (`com.nixfredos.listen`).
@@ -91,7 +97,7 @@ nixfredos-voice listen on|off|status  run the microphone listener as a backgroun
 ## How replies work
 
 - **Completions.** When voice is ON, the assistant ends a response with one `🗣️` line and the Stop hook speaks it.
-- **Spoken prompts.** A prompt that begins with `🎙️` was spoken to the listener. The prompt hook tells the assistant to answer aloud first with `nixfredos-voice say --bg`, in plain sentences, with details on screen. The Stop hook then skips that turn so nothing is said twice, and memory recall is skipped to keep the round trip short.
+- **Spoken prompts.** A prompt that begins with `🎙️` was spoken to the listener, which tags it with the machine that heard you: `🎙️ desk: what time is it`. The prompt hook tells the assistant to answer aloud first with `nixfredos-voice say --to desk --bg`, in plain sentences, with details on screen. `--to` plays the answer on that machine: locally, or over `ssh` when the session runs elsewhere (you talked at your desk to a session on a laptop through herdr). The Stop hook then skips that turn so nothing is said twice, and memory recall is skipped to keep the round trip short.
 - **Guards.** Subagents and headless sessions are blocked from `nixfredos-voice say|test` and from the speaker endpoints.
 
 ## Security

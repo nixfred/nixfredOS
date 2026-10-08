@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { parseKittyLs, pickByScreen, pickHerdrPane, socketNameForPid, sshDestination, workspaceFromTitle } from './target'
+import { herdrCandidates, parseKittyLs, pickByScreen, pickHerdrPane, socketNameForPid, sshDestination, workspaceFromTitle } from './target'
 
 describe('sshDestination', () => {
   test.each([
@@ -53,6 +53,22 @@ describe('pickHerdrPane', () => {
   test('unknown or ambiguous workspace is an error, never a guess', () => {
     expect('error' in pickHerdrPane(snap, 'nope')).toBe(true)
     expect('error' in pickHerdrPane(snap, 'twin')).toBe(true)
+  })
+})
+
+describe('herdrCandidates', () => {
+  test('global focus and the title workspace, Claude panes only, no duplicates', () => {
+    expect(herdrCandidates(snap, 'host2: my-project')).toEqual([
+      { pane_id: 'wA:p1', agent_status: 'blocked' },
+      { pane_id: 'wB:p2', agent_status: 'idle' },
+    ])
+    expect(herdrCandidates(snap, 'host2: other-project')).toEqual([{ pane_id: 'wA:p1', agent_status: 'blocked' }])
+  })
+  test('a non-herdr title or an ambiguous workspace adds nothing; a shell pane is never a candidate', () => {
+    expect(herdrCandidates(snap, 'just a title')).toEqual([{ pane_id: 'wA:p1', agent_status: 'blocked' }])
+    expect(herdrCandidates(snap, 'host2: twin')).toEqual([{ pane_id: 'wA:p1', agent_status: 'blocked' }])
+    expect(herdrCandidates({ ...snap, focused_pane_id: 'wZ:p9' }, 'x')).toEqual([])
+    expect(herdrCandidates(null, 'host2: my-project')).toEqual([])
   })
 })
 

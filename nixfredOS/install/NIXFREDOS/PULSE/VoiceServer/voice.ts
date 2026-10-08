@@ -13,6 +13,8 @@
  *
  * Switch: ~/.claude/voice.json {"enabled": bool, ...}. Read on EVERY line.
  * Missing or invalid means OFF (fail closed). NIXFREDOS_VOICE=off also means OFF.
+ * A line marked "spoken" (an answer to something the user SAID at this machine)
+ * also plays when "listen" is true, and always plays here, never on "speaker".
  * See NIXFREDOS/VOICE/README.md for the full config contract.
  *
  * Does NOT create its own HTTP server. Exports handleVoiceRequest() for
@@ -60,6 +62,17 @@ function cfg(): any {
 function voiceOn(): boolean {
   if ((process.env.NIXFREDOS_VOICE || "").toLowerCase() === "off") return false
   return cfg().enabled === true
+}
+
+/**
+ * Answers to spoken prompts: allowed when voice is on, or when the listener is
+ * on ("listen": true) on a machine whose agent voice is otherwise off. Only
+ * the answer to what the user said; completions and notifications stay off.
+ */
+function spokenOn(): boolean {
+  if ((process.env.NIXFREDOS_VOICE || "").toLowerCase() === "off") return false
+  const c = cfg()
+  return c.enabled === true || c.listen === true
 }
 
 /** KEY=value lookup: process env, then <configRoot>/.env, then ~/.env. */
@@ -179,10 +192,11 @@ function forwardToSpeaker(host: string, text: string): Promise<void> {
   )
 }
 
-async function speakNow(text: string, voiceId?: string): Promise<void> {
+async function speakNow(text: string, voiceId?: string, here = false): Promise<void> {
   const c = cfg()
   const speaker = typeof c.speaker === "string" ? c.speaker.trim() : ""
-  if (speaker && speaker.toLowerCase() !== hostname().toLowerCase()) return forwardToSpeaker(speaker, text)
+  // A spoken answer plays where the user spoke (here), whatever "speaker" says.
+  if (!here && speaker && speaker.toLowerCase() !== hostname().toLowerCase()) return forwardToSpeaker(speaker, text)
 
   const volume = Number(c.volume ?? 1)
   const engine = pickEngine()
@@ -221,10 +235,10 @@ let queue: Promise<void> = Promise.resolve()
 let pending = 0
 let lastEnd = 0
 
-function enqueue(text: string, voiceId?: string): Promise<void> {
+function enqueue(text: string, voiceId?: string, here = false): Promise<void> {
   pending++
   const job = () =>
-    speakNow(text, voiceId)
+    speakNow(text, voiceId, here)
       .catch((e) => log("warn", `Voice: speech failed: ${e?.message ?? e}`))
       .finally(() => { pending--; lastEnd = Date.now() })
   const next = queue.then(job, job)
@@ -263,7 +277,7 @@ export function voiceHealth(): Record<string, unknown> {
 
 /**
  * Routes:
- *   POST /notify              {message, title?, progress?, voice_id?, voice_enabled?}
+ *   POST /notify              {message, title?, progress?, voice_id?, voice_enabled?, spoken?}
  *   POST /notify/personality  plain alias of /notify (old callers)
  *   GET  /speaking            {speaking, pending, last_end}  (polled; never rate limited)
  *   GET  /voice/health        {status, engine, enabled, platform}
@@ -287,14 +301,15 @@ export async function handleVoiceRequest(req: Request): Promise<Response | null>
   try { body = await req.json() } catch { return jsonResponse({ status: "error", message: "bad json" }, 400) }
   if (!body || typeof body !== "object") return jsonResponse({ status: "error", message: "bad json" }, 400)
 
-  if (body.voice_enabled === false || !voiceOn()) return jsonResponse({ status: "off", message: "voice is OFF" })
+  const spoken = body.spoken === true
+  if (body.voice_enabled === false || !(spoken ? spokenOn() : voiceOn())) return jsonResponse({ status: "off", message: "voice is OFF" })
 
   const text = speakable(String(body.message ?? ""))
   if (!text) return jsonResponse({ status: "error", message: "nothing to say" }, 400)
   const voiceId = typeof body.voice_id === "string" && body.voice_id ? body.voice_id : undefined
 
   log("info", `Voice: speak${body.progress === true ? " (queued)" : ""}: "${text.slice(0, 60)}"`)
-  const done = enqueue(text, voiceId)
+  const done = enqueue(text, voiceId, spoken)
   if (body.progress !== true) await done
   return jsonResponse({ status: "success", message: body.progress === true ? "Queued" : "Spoken" })
 }

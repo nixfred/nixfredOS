@@ -5,8 +5,11 @@
 #   nixfredos-voice status              state + engine + Pulse health (exit 0 on, 1 off)
 #   nixfredos-voice say [--bg] <msg>    speak through Pulse (--bg: queue and return)
 #   nixfredos-voice say --stdin         read the message from stdin
+#   nixfredos-voice say --to <host> ... answer a spoken prompt on the machine that heard it
+#                                       (this one, or <host> over ssh)
 #   nixfredos-voice test                speak a short test line
 #   nixfredos-voice listen on|off|status   run the microphone listener as a service
+#                                       (on/off also set voice.json "listen")
 #   nixfredos-voice words add <word> <heard as>...   teach the listener a word it mishears
 #   nixfredos-voice words rm <word> | list          (~/.config/nixfredos-voice/vocabulary.json)
 #
@@ -40,24 +43,25 @@ switch_on() {
     catch { process.exit(1) }' 2>/dev/null
 }
 
-set_switch() { # $1 = true|false; keeps every other key
+set_switch() { # $1 = true|false, $2 = key (default "enabled"); keeps every other key
   mkdir -p "$CONFIG_ROOT"
-  SWITCH_FILE="$SWITCH" WANT="$1" bun -e '
+  SWITCH_FILE="$SWITCH" WANT="$1" KEY="${2:-enabled}" bun -e '
     const fs = require("fs"), f = process.env.SWITCH_FILE
     let c = {}
     try { c = JSON.parse(fs.readFileSync(f, "utf8")); if (!c || typeof c !== "object" || Array.isArray(c)) c = {} }
     catch (e) { if (fs.existsSync(f)) console.error("nixfredos-voice: existing voice.json is invalid, starting fresh") }
-    c.enabled = process.env.WANT === "true"
+    c[process.env.KEY] = process.env.WANT === "true"
     if (!c.engine) c.engine = "auto"
     fs.writeFileSync(f + ".tmp", JSON.stringify(c, null, 2) + "\n")
     fs.renameSync(f + ".tmp", f)' || die "could not write $SWITCH"
 }
 
-speak() { # $1 = message, $2 = "bg" to queue
+speak() { # $1 = message, $2 = "bg" to queue, $3 = "spoken" (answer to a spoken prompt)
   [ -n "$1" ] || die "nothing to say"
-  MSG="$1" BG="${2:-}" bun -e '
+  MSG="$1" BG="${2:-}" SPOKEN="${3:-}" bun -e '
     const body = { message: process.env.MSG }
     if (process.env.BG === "bg") body.progress = true
+    if (process.env.SPOKEN === "spoken") body.spoken = true
     process.stdout.write(JSON.stringify(body))' \
     | curl -sS --max-time 30 -X POST -H 'Content-Type: application/json' --data-binary @- "$PULSE/notify" \
     || die "Pulse is not reachable at $PULSE (is it running?)"
@@ -77,11 +81,35 @@ cmd_status() {
   exit $rc
 }
 
+# This machine's short name, as the listener tags spoken prompts with it.
+this_host() { local h; h="$(hostname 2>/dev/null || uname -n)"; echo "${h%%.*}"; }
+
+# Answer a spoken prompt where it was heard. Same machine: speak here, marked
+# spoken (plays even when agent voice is off but "listen" is on; never forwarded
+# to "speaker"). Another machine: hand it over ssh, text on stdin, so it never
+# becomes part of a command line. The far side gets --spoken (speak HERE), not
+# --to, so an ssh alias that differs from the hostname can never loop.
+say_to() { # $1 = host, $2 = message, $3 = "bg"
+  local host="$1" lower_host lower_me
+  [[ "$host" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,62}$ ]] || die "invalid host for --to: $host"
+  lower_host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
+  lower_me="$(this_host | tr '[:upper:]' '[:lower:]')"
+  if [ "$lower_host" = "$lower_me" ]; then speak "$2" "$3" spoken; return; fi
+  need ssh
+  printf '%s' "$2" | ssh -o BatchMode=yes -o ConnectTimeout=5 -- "$host" \
+    "\"\$HOME/.claude/NIXFREDOS/VOICE/bin/nixfredos-voice\" say --spoken --stdin $([ "$3" = bg ] && echo --bg)" \
+    || die "could not reach $host over ssh to speak there"
+}
+
 cmd_listen() {
   need bun
   local action="${1:-status}"
   [ -f "$LISTENER" ] || die "listener not found at $LISTENER"
   local bunbin; bunbin="$(command -v bun)"
+  # "listen" lets the listener run (and spoken prompts be answered aloud) even
+  # when agent voice ("enabled") is off. "enabled" is left alone.
+  case "$action" in on) set_switch true listen ;; off) set_switch false listen ;; esac
+  local env=(); [ -n "${PULSE_URL:-}" ] && env=(--setenv=PULSE_URL="$PULSE_URL")
   case "$(uname -s)" in
     Linux)
       need systemctl
@@ -90,7 +118,7 @@ cmd_listen() {
           need systemd-run
           systemctl --user is-active --quiet nixfredos-listen && { echo "listener already running"; return 0; }
           systemd-run --user --unit=nixfredos-listen --collect \
-            -p Restart=on-failure -p RestartSec=2 -p Nice=10 \
+            -p Restart=on-failure -p RestartSec=2 -p Nice=10 "${env[@]}" \
             "$bunbin" "$LISTENER" || die "could not start the listener"
           echo "listener on" ;;
         off) systemctl --user stop nixfredos-listen 2>/dev/null; echo "listener off" ;;
@@ -158,7 +186,7 @@ else console.log("not in your list: " + term)' "$file" "$1" ;;
 }
 
 usage() {
-  sed -n '2,13p' "$src" | sed 's/^# \{0,1\}//'
+  sed -n '2,16p' "$src" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -168,17 +196,19 @@ case "${1:-}" in
   status) need bun; need curl; cmd_status ;;
   say)
     need bun; need curl; shift
-    bg=""; from_stdin=0
+    bg=""; from_stdin=0; to=""; spoken=""
     while [ $# -gt 0 ]; do
       case "$1" in
         --bg) bg=bg; shift ;;
         --stdin) from_stdin=1; shift ;;
+        --to) [ $# -ge 2 ] || die "--to needs a host"; to="$2"; shift 2 ;;
+        --spoken) spoken=spoken; shift ;;
         --) shift; break ;;
         *) break ;;
       esac
     done
     if [ "$from_stdin" = 1 ]; then msg="$(cat)"; else msg="$*"; fi
-    speak "$msg" "$bg" ;;
+    if [ -n "$to" ]; then say_to "$to" "$msg" "$bg"; else speak "$msg" "$bg" "$spoken"; fi ;;
   test)
     need bun; need curl
     switch_on || echo "note: voice is OFF; the server will stay silent (nixfredos-voice on)" >&2

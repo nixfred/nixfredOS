@@ -4,7 +4,7 @@
  * own terminal.
  *
  * Mic -> personal VAD (voice print) -> whisper -> wake word -> types
- * "🎙️ <words>" + Enter into the kitty window running the session (kitten @
+ * "🎙️ <this host>: <words>" + Enter into the kitty window running the session (kitten @
  * send-text), or into the herdr pane running claude. Nothing is typed unless
  * the utterance starts with the wake word. Hooks on the other side react to
  * the 🎙️ prefix and answer out loud.
@@ -13,7 +13,8 @@
  * `claude` (or the herdr pane's agent must be claude); otherwise nothing is
  * typed (never into a bare shell).
  *
- * Does nothing unless ~/.claude/voice.json has "enabled": true (fail closed).
+ * Does nothing unless ~/.claude/voice.json has "enabled": true or "listen": true
+ * (fail closed).
  *
  *   bun src/listen.ts [--to unix:/run/user/1000/kitty-1234 --window 1]
  * (seed only: it types into the Claude window you are looking at)
@@ -26,14 +27,15 @@ import { appendFileSync, mkdirSync, readFileSync, statSync } from 'fs'
 import { join } from 'path'
 import { EnergyVad, isNoiseTranscript, pcmToWav, type Utterance } from './ears'
 import { checkWakeWord } from './wake'
-import { loadSwitch, PATHS } from './config'
+import { loadSwitch, PATHS, shortHost } from './config'
 import { Mic } from './mic'
 import { WhisperServer } from './whisper'
 import { VoicePrint } from './voiceprint'
 import { OwnerVad, type OwnerUtterance } from './ownervad'
 import { getSpeaking, notify } from './pulse'
 import { kittySockets, OS, run, which } from './platform'
-import { parseKittyLs, pickByScreen, pickHerdrPane, socketNameForPid, workspaceFromTitle, type KittyWindowInfo } from './target'
+import { herdrCandidates, parseKittyLs, pickByScreen, socketNameForPid, type KittyWindowInfo } from './target'
+import { spokenPrompt } from './spoken'
 
 mkdirSync(PATHS.state, { recursive: true })
 const LOG = join(PATHS.state, 'listen.log')
@@ -43,11 +45,14 @@ const log = (m: string) => { try { appendFileSync(LOG, `${new Date().toISOString
 // Fail closed: no switch, no mic.
 const cfg = loadSwitch()
 if (!cfg.allowed) {
-  log('voice.json does not say "enabled": true; listener not started')
-  console.error('voice listener is off (set "enabled": true in ~/.claude/voice.json, or run `nixfredos-voice listen on`)')
+  log('voice.json says neither "enabled": true nor "listen": true; listener not started')
+  console.error('voice listener is off (set "listen": true in ~/.claude/voice.json, or run `nixfredos-voice listen on`)')
   process.exit(0)
 }
 const WAKE = cfg.wakeWord
+// The machine that heard you. It goes on every typed prompt ("🎙️ desk: ..."),
+// so the session answers HERE even when it runs on another machine.
+const ORIGIN = shortHost()
 const say = (message: string) => notify(message, WAKE)
 
 const arg = (name: string) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : undefined }
@@ -108,14 +113,18 @@ function resolveTarget(): Target | null {
     const { to, win } = f
     if (win.claude) return { to, window: win.id }
     if (win.herdr) {
-      const pane = herdrFocusedClaude()
+      // You are looking at herdr: its Claude pane on screen, or nothing. Never
+      // fall back to a window you are not looking at.
+      const pane = herdrPaneOnScreen(null, win.title, to, win.id)
       if (pane) return { to, window: win.id, herdrPane: pane }
+      log(`focused window is herdr, title "${win.title}": no Claude pane confirmed on screen`)
+      return null
     }
     if (win.sshHost) {
       // You are looking at another machine. Its herdr or nothing: never fall
       // back to a local window you are not looking at.
       const machine = herdrMachineFor(win.sshHost)
-      const pane = machine ? remoteHerdrPane(machine, win.title, to, win.id) : null
+      const pane = machine ? herdrPaneOnScreen(machine, win.title, to, win.id) : null
       if (pane) return { to, window: win.id, herdrPane: pane, machine: machine! }
       log(`focused window is ssh ${win.sshHost}${machine ? '' : ' (no herdr machine profile)'}, title "${win.title}": no herdr Claude pane found`)
       return null
@@ -130,18 +139,7 @@ function resolveTarget(): Target | null {
   return null
 }
 
-// Local herdr server only. Panes of other machines are reached through the
-// ssh path below.
 let herdrBlocked = false
-function herdrFocusedClaude(): string | null {
-  const out = run(HERDR(), ['pane', 'current'])
-  try {
-    const pane = JSON.parse(out ?? '').result?.pane
-    if (pane?.agent !== 'claude') return null
-    herdrBlocked = pane.agent_status === 'blocked'
-    return pane.pane_id
-  } catch { return null }
-}
 
 // Saved herdr machine profiles (herdr machine list --json), refreshed each minute.
 let machinesAt = 0
@@ -156,36 +154,28 @@ function herdrMachineFor(host: string): string | null {
   return m?.label ?? null
 }
 
-// A remote herdr server has one GLOBAL focused pane, which may belong to
-// another client, and the window title ("{hostname}: {workspace}", config.toml
-// window_title on the remote) can be stale after you switch workspaces. Neither
-// is trusted alone. Candidates (Claude panes only): the global focused pane and
-// the title-workspace's focused pane. Each candidate's recent output is compared
-// with this window's screen text, and only a clear winner is used. A tie or no
-// match types NOTHING.
-function remoteHerdrPane(machine: string, title: string, kittyTo: string, kittyWindow: string): string | null {
-  const out = run(HERDR(), ['--machine', machine, 'api', 'snapshot'], 5000)
+// A herdr server has one GLOBAL focused pane, which may belong to another
+// client (you can be attached locally AND over ssh), and the window title
+// ("{hostname}: {workspace}", config.toml window_title) can be stale after you
+// switch workspaces. Neither is trusted alone. Candidates (Claude panes only):
+// the global focused pane and the title-workspace's focused pane. Each
+// candidate's recent output is compared with this window's screen text, and
+// only a clear winner is used. A tie or no match types NOTHING. machine = null
+// is the local herdr server; otherwise a saved `herdr --machine` profile.
+function herdrPaneOnScreen(machine: string | null, title: string, kittyTo: string, kittyWindow: string): string | null {
+  const where = machine ?? 'local'
+  const herdr = (args: string[], timeout = 5000) => run(HERDR(), [...(machine ? ['--machine', machine] : []), ...args], timeout)
   let snap: any
-  try { snap = JSON.parse(out ?? '').result.snapshot } catch (e: any) { log(`herdr ${machine} snapshot failed: ${e?.message ?? e}`); return null }
-  const claudePane = (id: string | undefined) => (snap.panes ?? []).find((p: any) => p.pane_id === id && p.agent === 'claude')
-  const cands = new Map<string, any>()
-  const g = claudePane(snap.focused_pane_id); if (g) cands.set(g.pane_id, g)
-  const label = workspaceFromTitle(title)
-  if (label) {
-    const pick = pickHerdrPane(snap, label)
-    if (!('error' in pick)) { const t = claudePane(pick.pane_id); if (t) cands.set(t.pane_id, t) }
-  }
-  if (!cands.size) { log(`herdr ${machine}: no Claude pane among global focus / title "${title}"`); return null }
+  try { snap = JSON.parse(herdr(['api', 'snapshot']) ?? '').result.snapshot } catch (e: any) { log(`herdr ${where} snapshot failed: ${e?.message ?? e}`); return null }
+  const cands = herdrCandidates(snap, title)
+  if (!cands.length) { log(`herdr ${where}: no Claude pane among global focus / title "${title}"`); return null }
   // Even a single candidate must appear on screen.
   const screen = run(KITTEN(), ['@', '--to', kittyTo, 'get-text', '--match', `id:${kittyWindow}`], 3000) ?? ''
-  const texts = [...cands.keys()].map(pane => ({
-    pane,
-    text: run(HERDR(), ['--machine', machine, 'pane', 'read', pane, '--source', 'recent', '--lines', '30'], 5000) ?? '',
-  }))
+  const texts = cands.map(c => ({ pane: c.pane_id, text: herdr(['pane', 'read', c.pane_id, '--source', 'recent', '--lines', '30']) ?? '' }))
   const chosen = pickByScreen(screen, texts)
-  log(`herdr ${machine}: candidates ${[...cands.keys()].join(', ')} (global ${snap.focused_pane_id}, title "${title}") -> ${chosen ?? 'none on screen'}`)
+  log(`herdr ${where}: candidates ${cands.map(c => c.pane_id).join(', ')} (global ${snap.focused_pane_id}, title "${title}") -> ${chosen ?? 'none on screen'}`)
   if (!chosen) return null
-  herdrBlocked = cands.get(chosen).agent_status === 'blocked'
+  herdrBlocked = cands.find(c => c.pane_id === chosen)!.agent_status === 'blocked'
   return chosen
 }
 
@@ -224,7 +214,7 @@ const whisper = new WhisperServer(undefined, undefined, 6, log)
 let voiceprint: VoicePrint | null = null
 try {
   voiceprint = new VoicePrint()
-  log(voiceprint.enrolled ? `voice print loaded (threshold ${voiceprint.threshold})` : `no voice print enrolled: anyone saying "${WAKE}" gets through (run scripts/enroll.ts)`)
+  log(voiceprint.enrolled ? `voice print loaded from ${voiceprint.source} (threshold ${voiceprint.threshold})` : `no voice print enrolled: anyone saying "${WAKE}" gets through (run scripts/enroll.ts)`)
 } catch (e: any) { log(`voice print unavailable: ${e?.message ?? e}`) }
 
 // Only the opening is checked for the wake word. A long stretch of TV or other
@@ -298,7 +288,7 @@ async function onUtterance(u: Utterance) {
     say('That session is waiting on a question on screen. Answer it first.')
     return
   }
-  if (!typeIntoSession(target, `🎙️ ${words}`)) { log(`typing failed (${target.herdrPane ? 'herdr ' + target.herdrPane : 'kitty'}): "${words}"`); return }
+  if (!typeIntoSession(target, spokenPrompt(words, ORIGIN))) { log(`typing failed (${target.herdrPane ? 'herdr ' + target.herdrPane : 'kitty'}): "${words}"`); return }
   lastTarget = target
   waiting = { voicedEndAt: u.voicedEndAt, injectedAt: Date.now(), text: words }
   log(`typed into ${target.herdrPane ? 'herdr ' + (target.machine ? target.machine + ':' : '') + target.herdrPane : target.to.split('-').pop() + '/' + target.window} (end-of-turn ${u.endedAt - u.voicedEndAt}ms, stt ${sttMs}ms): "${words}"`)
@@ -329,7 +319,7 @@ const vad: { push(f: Int16Array, now: number): Utterance | null; abort(): void }
 log(`segmenting by ${voiceprint?.enrolled ? 'your voice (personal VAD)' : 'loudness (energy VAD)'}; platform ${OS}${OS === 'darwin' ? ' (EXPERIMENTAL)' : ''}`)
 setInterval(pollSpeaking, 200)
 // The switch is re-read every 5 s: turning voice.json "enabled" off stops the mic.
-setInterval(() => { if (!loadSwitch().allowed) { log('voice.json no longer says "enabled": true'); shutdown() } }, 5000)
+setInterval(() => { if (!loadSwitch().allowed) { log('voice.json no longer says "enabled" or "listen": true'); shutdown() } }, 5000)
 mic = new Mic((frame, now) => {
   // Half-duplex per frame: while the assistant talks (and 400 ms after), the
   // mic is ignored, so your next words start a fresh utterance instead of being
@@ -337,6 +327,6 @@ mic = new Mic((frame, now) => {
   if (assistantSpeaking || now - lastSpokeAt < 400) { vad.abort(); return }
   const u = vad.push(frame, now)
   if (u) onUtterance(u).catch(e => log(`utterance error: ${e?.message ?? e}`))
-}, log)
+}, log, cfg.mic)
 mic.start()
-log(`listening for "${WAKE}" -> the focused Claude window (fallback: the only one, then the last used${lastTarget ? ': ' + lastTarget.to + ' #' + lastTarget.window : ''})`)
+log(`listening for "${WAKE}" as ${ORIGIN} -> the focused Claude window (fallback: the only one, then the last used${lastTarget ? ': ' + lastTarget.to + ' #' + lastTarget.window : ''})`)

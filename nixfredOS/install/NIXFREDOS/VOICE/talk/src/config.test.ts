@@ -1,11 +1,31 @@
 import { describe, expect, test } from 'bun:test'
-import { listenAllowed, pathsFor, resolveWakeWord } from './config'
+import { listenAllowed, micTarget, pathsFor, resolveWakeWord, shortHost } from './config'
 
 describe('listenAllowed (fail closed)', () => {
-  test('only enabled === true opens the mic', () => {
+  test('only enabled === true or listen === true opens the mic', () => {
     expect(listenAllowed({ enabled: true })).toBe(true)
-    for (const v of [null, undefined, {}, { enabled: false }, { enabled: 'true' }, { enabled: 1 }, 'on'])
+    expect(listenAllowed({ enabled: false, listen: true })).toBe(true)
+    for (const v of [null, undefined, {}, { enabled: false }, { enabled: 'true' }, { enabled: 1 }, 'on',
+                     { listen: 'true' }, { listen: 1 }, { enabled: false, listen: false }])
       expect(listenAllowed(v)).toBe(false)
+  })
+})
+
+describe('micTarget', () => {
+  test('env wins, then voice.json "mic", else the default source', () => {
+    expect(micTarget({ mic: 'usb-mic' }, { NIXFREDOS_VOICE_MIC_TARGET: 'env-mic' })).toBe('env-mic')
+    expect(micTarget({ mic: ' usb-mic ' }, {})).toBe('usb-mic')
+    expect(micTarget({ mic: '' }, { NIXFREDOS_VOICE_MIC_TARGET: '  ' })).toBe(undefined)
+    expect(micTarget(null, {})).toBe(undefined)
+  })
+})
+
+describe('shortHost', () => {
+  test('the first label, or a safe placeholder', () => {
+    expect(shortHost('laptop.lan')).toBe('laptop')
+    expect(shortHost('desk')).toBe('desk')
+    expect(shortHost('-bad')).toBe('host')
+    expect(shortHost('')).toBe('host')
   })
 })
 
@@ -34,6 +54,7 @@ describe('pathsFor', () => {
     expect(p.state).toBe('/h/.local/state/nixfredos-voice')
     expect(p.models).toBe('/h/.local/share/nixfredos-voice/models')
     expect(p.voiceprint).toBe('/h/.config/nixfredos-voice/voiceprint.json')
+    expect(pathsFor('/h', 'desk').hostVoiceprint).toBe('/h/.config/nixfredos-voice/voiceprint.desk.json')
     expect(p.voiceJson).toBe('/h/.claude/voice.json')
   })
 })

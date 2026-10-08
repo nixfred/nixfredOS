@@ -2,7 +2,10 @@
 
 Planned work, in order. Each item lists the problem and the design.
 
-## 1. Answer where you spoke (multiple listeners)
+Status: items 1 to 3 are built (listener origin tag + `say --to`, local herdr
+screen check, per-machine voice print and `mic`). Item 4 is next.
+
+## 1. Answer where you spoke (multiple listeners): DONE
 
 **Problem.** You can run a listener on more than one machine, for example a laptop and a desktop. A session on the desktop can be reached from either one: by its own mic, or from the laptop through `ssh` + herdr. Today the answer plays wherever the session's host config points (`voice.json` `speaker`), which is not always where the user is sitting.
 
@@ -13,7 +16,7 @@ Planned work, in order. Each item lists the problem and the design.
 - No tag means today's behavior.
 - **Policy.** A host whose voice is otherwise off (silent agents) may still answer a prompt the user *spoke*, and only on the origin host. Completion lines, notifications and agent chatter stay silent.
 
-## 2. Screen-confirm local herdr panes too
+## 2. Screen-confirm local herdr panes too: DONE
 
 **Problem.** herdr's "focused pane" (`pane current`, and the snapshot's global `focused_pane_id`) follows whichever attached client acted last. If the user is attached from two places (locally and over ssh), the local listener can pick the pane focused in the *other* client.
 
@@ -22,14 +25,14 @@ Planned work, in order. Each item lists the problem and the design.
 2. Compare each candidate's recent output with the focused kitty window's screen text.
 3. If neither clearly matches, type nothing.
 
-## 3. A voice print per machine
+## 3. A voice print per machine: DONE
 
 **Problem.** A voice print enrolled on one mic scores lower on a different mic and room.
 
 **Design.**
 - `enroll.ts` records on the machine it runs on, and stores the voice print per host (`voiceprint.json` keyed by hostname, or one file per host).
 - The listener uses its own host's print and falls back to any print it finds.
-- Document picking a good mic (a USB dynamic mic beats a webcam mic) with `NIXFREDOS_VOICE_MIC_TARGET`.
+- Document picking a good mic (a USB dynamic mic beats a webcam mic) with `NIXFREDOS_VOICE_MIC_TARGET` or voice.json `"mic"`.
 
 ## 4. Remote round-trip latency
 
