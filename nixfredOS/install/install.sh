@@ -462,28 +462,41 @@ migrate_rc() {
   ts="$(date +%Y%m%d-%H%M%S)"
   cp "$rc" "$rc.nixfredos-backup-$ts"
   names="$(printf '%s\n' "$stale" | sed -E 's/^[[:space:]]*alias[[:space:]]+([A-Za-z_][A-Za-z0-9_]*)=.*/\1/' | sort -u)"
-  awk -v tag="$NIXFREDOS_TAG" '
+  # Seed the temp file from the rc with `cp -p` so the rewrite INHERITS the rc's
+  # mode. A bare `> "$rc.nixfredos-tmp"` creates it at 0644&~umask and the mv then
+  # stamps THAT onto the rc, silently widening a 0600 ~/.zshrc to world-readable.
+  # rc files routinely hold `export SOME_API_KEY=...`, so this leaked secrets
+  # rather than merely changing a mode. `cp -p` is POSIX, same on macOS and Linux.
+  cp -p "$rc" "$rc.nixfredos-tmp"
+  if ! awk -v tag="$NIXFREDOS_TAG" '
     /^[[:space:]]*alias[[:space:]]+(pai|kai|lifeos|nixfredos)=/ && !/NIXFREDOS_SYSTEM_PROMPT/ && (/\/PAI\// || /&&[[:space:]]*claude/) {
       print "# [migrated to nixfredOS " tag " — see .nixfredos-backup] " $0; next
     }
     { print }
-  ' "$rc" > "$rc.nixfredos-tmp" && mv "$rc.nixfredos-tmp" "$rc"
+  ' "$rc" > "$rc.nixfredos-tmp"; then
+    # awk failed: drop the temp and leave the rc untouched. Without this the temp
+    # survived as litter next to the user's rc and nothing said why.
+    rm -f "$rc.nixfredos-tmp"
+    error "Could not rewrite ${rc/#$HOME/~} — it is UNCHANGED (backup: $(basename "$rc").nixfredos-backup-$ts)."; exit 1
+  fi
+  mv -f "$rc.nixfredos-tmp" "$rc"
   if [ -f "$LAUNCHER" ]; then
     local add_nixfredos=1 alias_body
     # Two levels of quoting for two levels of parsing: the inner shq protects the
     # paths when the alias body runs, the outer one when the rc file is sourced.
     alias_body="bun $(shq "$LAUNCHER") -s $(shq "$SYS_PROMPT")"
-    printf '%s\n' $names | grep -qx nixfredos && add_nixfredos=0
+    printf '%s\n' "$names" | grep -qx nixfredos && add_nixfredos=0
     grep -E '^[[:space:]]*alias[[:space:]]+nixfredos=' "$rc" 2>/dev/null | grep -q 'NIXFREDOS_SYSTEM_PROMPT' && add_nixfredos=0
     {
       echo ""
       echo "# nixfredOS ${NIXFREDOS_TAG} launch aliases (repointed from pre-7.x by install.sh)"
-      for n in $names; do
+      while IFS= read -r n; do
+        [ -n "$n" ] || continue
         echo "alias $n=$(shq "$alias_body")"
-      done
+      done <<< "$names"
       if [ "$add_nixfredos" = "1" ]; then echo "alias nixfredos=$(shq "$alias_body")"; fi
     } >> "$rc"
-    success "Repointed $(echo $names | tr '\n' ' ')to the constituted 7.x launcher (backup: $(basename "$rc").nixfredos-backup-$ts)"
+    success "Repointed $(printf '%s\n' "$names" | tr '\n' ' ')to the constituted 7.x launcher (backup: $(basename "$rc").nixfredos-backup-$ts)"
   else
     warn "Old alias commented out, but the NIXFREDOS launcher isn't placed yet — /nixfredOS setup will wire the new alias (backup: $(basename "$rc").nixfredos-backup-$ts)."
   fi
