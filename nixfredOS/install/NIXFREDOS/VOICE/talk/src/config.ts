@@ -45,10 +45,17 @@ export function listenAllowed(voiceJson: any): boolean {
   return !!voiceJson && voiceJson.enabled === true
 }
 
+// Product default names are not names a person says, and speech-to-text
+// mangles them, so they count as "no name set" for the wake word.
+const NOT_A_WAKE_WORD = new Set(['nixfredos', 'pai', 'assistant', 'da'])
+
 /** Wake word: voice.json "wake_word", else the DA identity name, else "Computer". */
 export function resolveWakeWord(voiceJson: any, settingsJson: any): string {
   const pick = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null)
-  return pick(voiceJson?.wake_word) ?? pick(settingsJson?.daidentity?.name) ?? DEFAULT_WAKE_WORD
+  const daName = pick(settingsJson?.daidentity?.name)
+  return pick(voiceJson?.wake_word)
+    ?? (daName && !NOT_A_WAKE_WORD.has(daName.toLowerCase()) ? daName : null)
+    ?? DEFAULT_WAKE_WORD
 }
 
 export function loadSwitch(paths = PATHS) {

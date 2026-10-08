@@ -21,6 +21,11 @@ describe('resolveWakeWord', () => {
     expect(resolveWakeWord(null, null)).toBe('Computer')
     expect(resolveWakeWord({ wake_word: '  ' }, { daidentity: {} })).toBe('Computer')
   })
+  test('product default names are not wake words', () => {
+    expect(resolveWakeWord(null, { daidentity: { name: 'nixfredOS' } })).toBe('Computer')
+    expect(resolveWakeWord(null, { daidentity: { name: 'PAI' } })).toBe('Computer')
+    expect(resolveWakeWord({ wake_word: 'nixfredOS' }, null)).toBe('nixfredOS') // explicit choice still wins
+  })
 })
 
 describe('pathsFor', () => {
