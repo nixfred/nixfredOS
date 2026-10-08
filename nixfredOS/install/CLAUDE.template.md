@@ -76,10 +76,18 @@ Populated during `/nixfredOS setup`. Typical layout:
 - Principal identity — `PRINCIPAL/PRINCIPAL_IDENTITY.md` (canonical, @-imported)
 - Career & resume — `PRINCIPAL/RESUME.md`
 - Writing style — `PRINCIPAL/WRITINGSTYLE.md`
-- Pronunciations — `PRINCIPAL/PRONUNCIATIONS.json` (TTS rules — Pulse VoiceServer reads this)
+- Pronunciations — `PRINCIPAL/PRONUNCIATIONS.json` (optional exact phrase → spoken text map; the Pulse voice module reads it)
 - Contacts — `CONTACTS.md`
 - Definitions — `DEFINITIONS.md`
 - Core content themes — `CANONICAL_CONTENT.md`
+
+## Voice (optional, OFF by default)
+
+- Switch and engine live in `~/.claude/voice.json`; control with `nixfredos-voice on|off|status`. Docs: `NIXFREDOS/VOICE/README.md`.
+- ElevenLabs is optional. Without it, voice falls back to macOS `say`, then `piper`, then `espeak-ng`.
+- When voice is ON, end the response with the one `🗣️` line; the Stop hook speaks it. When OFF, the line is only text.
+- A prompt that begins with `🎙️` was spoken by the user. When the hook adds a `<nixfredos-spoken-turn>` rule, follow it: first action is `nixfredos-voice say --bg "<spoken answer>"` in plain sentences, details on screen, no `🗣️` line that turn.
+- Never run `nixfredos-voice` or curl `/notify` from a subagent or a scheduled/headless job; the egress guard blocks it.
 
 ## Principal — Life Goals
 

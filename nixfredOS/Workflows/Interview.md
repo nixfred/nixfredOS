@@ -15,7 +15,7 @@ Peer conversation, not a form. Ask one thing at a time, reflect it back, go deep
 
 ## Sequence
 
-1. **DA naming + voice** — what do they want to call their assistant? Capture `da.name`, optional `da.full_name`/`display_name`/`color`, and a voice (`da.voices.main.voice_id` — offer the public default, let them paste an ElevenLabs id). Write to `CONFIG/NIXFREDOS_CONFIG.toml`. *(This is the step the old install wizard handled; it lives here now.)*
+1. **DA naming + voice** — what do they want to call their assistant? Capture `da.name`, optional `da.full_name`/`display_name`/`color`, and, only if they want ElevenLabs, a voice (`da.voices.main.voice_id` — let them paste an ElevenLabs id; voice works without it via OS-native engines and is off until they run `nixfredos-voice on`). Write to `CONFIG/NIXFREDOS_CONFIG.toml`. *(This is the step the old install wizard handled; it lives here now.)*
 2. **Principal identity** — name, pronunciation, timezone, hometown → `[principal]` in `NIXFREDOS_CONFIG.toml` and `PRINCIPAL/PRINCIPAL_IDENTITY.md`.
 3. **TELOS — current state** — mission, the people who matter, current projects, challenges, what's actually true right now. Write to `TELOS/`.
 4. **TELOS — ideal state** — goals (with metrics + dates where they have them), strategies, the destination. Current → ideal is the spine of nixfredOS; get both halves.
