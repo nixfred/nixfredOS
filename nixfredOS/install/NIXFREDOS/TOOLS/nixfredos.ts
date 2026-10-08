@@ -34,7 +34,6 @@ const CLAUDE_DIR = join(homedir(), ".claude");
 const MCP_DIR = join(CLAUDE_DIR, "MCPs");
 const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
 const BANNER_SCRIPT = join(homedir(), ".claude", "NIXFREDOS", "TOOLS", "Banner.ts");
-const VOICE_SERVER = `${PULSE_BASE}/notify/personality`;
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
 // Note: RAW archiving removed - Claude Code handles its own cleanup (30-day retention in projects/)
 
@@ -134,16 +133,6 @@ async function loadIdentityModule(): Promise<IdentityModule | null> {
   return identityModule;
 }
 
-async function getIdentity(): Promise<Identity> {
-  const mod = await loadIdentityModule();
-  if (!mod) return FALLBACK_IDENTITY;
-  try {
-    return mod.getIdentity();
-  } catch {
-    return FALLBACK_IDENTITY;
-  }
-}
-
 async function getStartupCatchphrase(): Promise<string> {
   const mod = await loadIdentityModule();
   if (!mod) return `${FALLBACK_IDENTITY.name} here, ready to go.`;
@@ -154,44 +143,13 @@ async function getStartupCatchphrase(): Promise<string> {
   }
 }
 
-async function notifyVoice(message: string) {
-  // Fire and forget voice notification using Qwen3-TTS with personality
-  const identity = await getIdentity();
-  const personality = identity.personality;
-
-  if (!personality?.baseVoice) {
-    // Fall back to simple notify if no personality configured
-    fetch(`${PULSE_BASE}/notify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, play: true }),
-    }).catch(() => {});
-    return;
-  }
-
-  fetch(VOICE_SERVER, {
+function notifyVoice(message: string) {
+  // Fire and forget. The server stays silent when the voice switch is OFF.
+  fetch(`${PULSE_BASE}/notify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message,
-      personality: {
-        name: identity.name.toLowerCase(),
-        base_voice: personality.baseVoice,
-        enthusiasm: personality.enthusiasm,
-        energy: personality.energy,
-        expressiveness: personality.expressiveness,
-        resilience: personality.resilience,
-        composure: personality.composure,
-        optimism: personality.optimism,
-        warmth: personality.warmth,
-        formality: personality.formality,
-        directness: personality.directness,
-        precision: personality.precision,
-        curiosity: personality.curiosity,
-        playfulness: personality.playfulness,
-      },
-    }),
-  }).catch(() => {}); // Silently ignore errors
+    body: JSON.stringify({ message }),
+  }).catch(() => {});
 }
 
 function displayBanner() {

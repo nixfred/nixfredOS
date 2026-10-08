@@ -22,7 +22,6 @@ import { spawn } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { inference } from './Inference';
-import { getIdentity } from '../../hooks/lib/identity';
 import { PULSE_BASE } from '../PULSE/endpoint';
 import { homedir } from "node:os";
 
@@ -789,44 +788,14 @@ function checkReferences(changes: FileChange[]): IntegrityResult {
 
 async function sendVoiceNotification(message: string): Promise<void> {
   try {
-    const identity = getIdentity();
-    const personality = identity.personality;
-
-    if (!personality?.baseVoice) {
-      // Fall back to simple notify if no personality configured
-      await fetch(`${PULSE_BASE}/notify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, play: true }),
-      });
-      return;
-    }
-
-    await fetch(`${PULSE_BASE}/notify/personality`, {
+    await fetch(`${PULSE_BASE}/notify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        personality: {
-          name: identity.name.toLowerCase(),
-          base_voice: personality.baseVoice,
-          enthusiasm: personality.enthusiasm,
-          energy: personality.energy,
-          expressiveness: personality.expressiveness,
-          resilience: personality.resilience,
-          composure: personality.composure,
-          optimism: personality.optimism,
-          warmth: personality.warmth,
-          formality: personality.formality,
-          directness: personality.directness,
-          precision: personality.precision,
-          curiosity: personality.curiosity,
-          playfulness: personality.playfulness,
-        },
-      }),
+      body: JSON.stringify({ message }),
+      signal: AbortSignal.timeout(15000),
     });
   } catch {
-    // Voice server might not be running - silent fail
+    // Pulse might not be running, or voice is OFF - silent fail
   }
 }
 
