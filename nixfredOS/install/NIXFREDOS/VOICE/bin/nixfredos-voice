@@ -7,6 +7,8 @@
 #   nixfredos-voice say --stdin         read the message from stdin
 #   nixfredos-voice test                speak a short test line
 #   nixfredos-voice listen on|off|status   run the microphone listener as a service
+#   nixfredos-voice words add <word> <heard as>...   teach the listener a word it mishears
+#   nixfredos-voice words rm <word> | list          (~/.config/nixfredos-voice/vocabulary.json)
 #
 # Everything goes through POST /notify on Pulse (127.0.0.1 only). See
 # NIXFREDOS/VOICE/README.md. Requires bun (already a nixfredOS dependency) and curl.
@@ -123,8 +125,40 @@ PLIST
   esac
 }
 
+# Word corrections for the listener: {"Omarchy": ["Amachi", ...]}. Whisper's
+# mishearings are rewritten to the word you meant (whole words only). The
+# listener reloads the file on change. Arguments reach bun as data (argv),
+# never as code.
+cmd_words() {
+  local file="${XDG_CONFIG_HOME:-$HOME/.config}/nixfredos-voice/vocabulary.json"
+  need bun
+  case "${1:-list}" in
+    add) shift; [ $# -ge 2 ] || die "usage: nixfredos-voice words add <word> <heard as> [heard as ...]"
+         bun -e '
+const fs = require("fs"), path = require("path")
+const [file, term, ...heard] = process.argv.slice(1)
+let v = {}; try { v = JSON.parse(fs.readFileSync(file, "utf8")) } catch {}
+if (!v || typeof v !== "object" || Array.isArray(v)) v = {}
+const list = Array.isArray(v[term]) ? v[term] : []
+for (const h of heard) if (h.trim() && !list.some(x => x.toLowerCase() === h.trim().toLowerCase())) list.push(h.trim())
+v[term] = list
+fs.mkdirSync(path.dirname(file), { recursive: true })
+fs.writeFileSync(file, JSON.stringify(v, null, 2) + "\n")
+console.log(term + " <- " + list.join(", "))' "$file" "$@" ;;
+    rm|remove) shift; [ $# -ge 1 ] || die "usage: nixfredos-voice words rm <word>"
+         bun -e '
+const fs = require("fs")
+const [file, term] = process.argv.slice(1)
+let v = {}; try { v = JSON.parse(fs.readFileSync(file, "utf8")) } catch {}
+if (v && term in v) { delete v[term]; fs.writeFileSync(file, JSON.stringify(v, null, 2) + "\n"); console.log("removed " + term) }
+else console.log("not in your list: " + term)' "$file" "$1" ;;
+    list) [ -f "$file" ] && cat "$file" || echo "no words of your own yet ($file). Built-ins: Omarchy, Hyprland, GitHub, Linux and tech terms." ;;
+    *) die "usage: nixfredos-voice words add|rm|list" ;;
+  esac
+}
+
 usage() {
-  sed -n '2,11p' "$src" | sed 's/^# \{0,1\}//'
+  sed -n '2,13p' "$src" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -150,6 +184,7 @@ case "${1:-}" in
     switch_on || echo "note: voice is OFF; the server will stay silent (nixfredos-voice on)" >&2
     speak "Voice test. If you can hear this, the voice is working." ;;
   listen) shift; cmd_listen "${1:-status}" ;;
+  words) shift; cmd_words "$@" ;;
   -h|--help|help) usage 0 ;;
   *) usage 1 ;;
 esac

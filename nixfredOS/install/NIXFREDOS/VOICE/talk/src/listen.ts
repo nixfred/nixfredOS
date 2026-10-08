@@ -21,7 +21,8 @@
  * Linux is supported. macOS is EXPERIMENTAL and untested.
  */
 import { spawnSync } from 'child_process'
-import { appendFileSync, mkdirSync } from 'fs'
+import { Corrector } from './vocabulary'
+import { appendFileSync, mkdirSync, readFileSync, statSync } from 'fs'
 import { join } from 'path'
 import { EnergyVad, isNoiseTranscript, pcmToWav, type Utterance } from './ears'
 import { checkWakeWord } from './wake'
@@ -231,6 +232,27 @@ try {
 const WAKE_CHECK_SAMPLES = 16000 * 2.5
 const STALE_MS = 10000
 
+// Word corrections (Omarchy, Hyprland, ... plus the user's own list), applied
+// after transcription and before the wake word check. Reloaded when the file
+// changes, so `nixfredos-voice words add` works without a restart.
+let corrector = new Corrector()
+let vocabStamp = ''
+function correct(text: string): string {
+  try {
+    const st = statSync(PATHS.vocabulary)
+    const stamp = `${st.mtimeMs}:${st.size}`
+    if (stamp !== vocabStamp) {
+      vocabStamp = stamp
+      corrector = new Corrector(JSON.parse(readFileSync(PATHS.vocabulary, 'utf8')))
+      log(`vocabulary loaded (${PATHS.vocabulary})`)
+    }
+  } catch (e: any) {
+    if (vocabStamp !== 'none' && e?.code !== 'ENOENT') log(`vocabulary unreadable, using built-ins: ${e?.message ?? e}`)
+    if (vocabStamp !== 'none') { corrector = new Corrector(); vocabStamp = 'none' }
+  }
+  return corrector.apply(text)
+}
+
 async function onUtterance(u: Utterance) {
   if (lastSpokeAt >= u.startedAt - 400) { log(`echo guard: dropped ${((u.endedAt - u.startedAt) / 1000).toFixed(1)}s heard while the assistant spoke`); return }
   // Only the enrolled user. Runs before whisper, so the TV and other people
@@ -247,10 +269,10 @@ async function onUtterance(u: Utterance) {
   let text = ''
   try {
     if (u.pcm.length > WAKE_CHECK_SAMPLES * 1.4) {
-      const head = await whisper.transcribe(pcmToWav(u.pcm.subarray(0, WAKE_CHECK_SAMPLES)))
+      const head = correct(await whisper.transcribe(pcmToWav(u.pcm.subarray(0, WAKE_CHECK_SAMPLES))))
       if (!checkWakeWord(head, { name: WAKE, loose: fromOwnerVad }).ok) { log(`no "${WAKE}" in the opening, ignored ${(u.pcm.length / 16000).toFixed(1)}s (${Date.now() - t0}ms): "${head.slice(0, 60)}"`); return }
     }
-    text = await whisper.transcribe(pcmToWav(u.pcm))
+    text = correct(await whisper.transcribe(pcmToWav(u.pcm)))
   } catch (e: any) { log(`whisper failed: ${e?.message ?? e}`); return }
   const sttMs = Date.now() - t0
   if (isNoiseTranscript(text)) return

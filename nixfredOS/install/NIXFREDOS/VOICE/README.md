@@ -86,6 +86,8 @@ nixfredos-voice listen on|off|status  run the microphone listener as a backgroun
 
 `listen` runs `NIXFREDOS/VOICE/talk/src/listen.ts` under `systemd --user` on Linux (unit `nixfredos-listen`, restarts on failure, low CPU priority) and under `launchd` on macOS (`com.nixfredos.listen`).
 
+`nixfredos-voice words add|rm|list` teaches the listener words it mishears (see `talk/README.md`, "Words it gets wrong").
+
 ## How replies work
 
 - **Completions.** When voice is ON, the assistant ends a response with one `🗣️` line and the Stop hook speaks it.

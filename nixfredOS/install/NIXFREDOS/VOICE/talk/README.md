@@ -76,6 +76,14 @@ The print is a 192-number average stored at `~/.config/nixfredos-voice/voiceprin
 (mode 0600). It is biometric data: do not share or commit it. Threshold 0.35 is
 provisional; the listener logs the scores it sees every 10 s so you can tune.
 
+## Words it gets wrong
+
+Speech-to-text mishears names and jargon ("Omarchy" comes out as "Amachi", "Hyprland" as "hyper land"). The listener fixes these **after** transcription, before the wake word check. It matches whole words only, ignores case, never touches anything inside a domain, path or hyphenated word, and prefers the longest match. Fixing it after transcription instead of with an initial prompt avoids whisper's prompt-induced loops.
+
+- Built in: Omarchy, Hyprland, Waybar, common Linux tools (systemd, pacman, tmux, Btrfs, ...) and tech terms (GitHub, Claude Code, Kubernetes, Tailscale, ...).
+- Your own: `nixfredos-voice words add <word> <heard as> [heard as ...]`, `words rm <word>`, `words list`. They are stored in `~/.config/nixfredos-voice/vocabulary.json` as `{"Word": ["heard as", ...]}`, and the listener reloads the file when it changes.
+- Only add a "heard as" that is not an ordinary word. Whisper hears "herdr" as "herder", but people say herder, so that one stays out of the built-ins.
+
 ## Safety model
 
 - **Wake word on every utterance.** No wake word, nothing is typed (TV and

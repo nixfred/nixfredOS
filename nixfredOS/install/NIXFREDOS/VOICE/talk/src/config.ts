@@ -14,6 +14,7 @@ export interface Paths {
   state: string        // listen.log, listen.jsonl
   models: string       // downloaded models
   voiceprint: string   // the enrolled voice print (0600)
+  vocabulary: string   // the user's own word corrections
   voiceJson: string    // the on/off switch + options
   settingsJson: string // DA identity mirror
 }
@@ -23,6 +24,7 @@ export function pathsFor(home = homedir()): Paths {
     state: join(home, '.local/state/nixfredos-voice'),
     models: join(home, '.local/share/nixfredos-voice/models'),
     voiceprint: join(home, '.config/nixfredos-voice/voiceprint.json'),
+    vocabulary: join(home, '.config/nixfredos-voice/vocabulary.json'),
     voiceJson: join(home, '.claude/voice.json'),
     settingsJson: join(home, '.claude/settings.json'),
   }
