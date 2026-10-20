@@ -46,7 +46,11 @@ It walks the setup and asks before it touches anything on your machine. You need
 claude mcp add --scope user --transport http how-nixfred https://how.nixfred.com/mcp
 ```
 
-Don't trust it, [audit it](https://github.com/nixfred/how.nixfred.com-public).
+Don't trust me, [audit it](https://github.com/nixfred/how.nixfred.com-public).
+
+The recipe box is the recipe, not the goal. Build it once, then hand your Larry any repo and build anything.
+
+<sub>You can do all of this yourself, free plus your subscription. If you want help with advanced work, I am available, and it is not free and not cheap: [book a call](https://calendly.com/nixfred).</sub>
 
 ## What you get
 
