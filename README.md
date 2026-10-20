@@ -38,14 +38,24 @@ Read nixfredOS/INSTALL.md and install nixfredOS for me.
 
 It walks the setup and asks before it touches anything on your machine. You need a coding harness that can read files and run commands (built and tested on [Claude Code](https://docs.claude.com/claude-code)) and [bun](https://bun.sh).
 
+### New to this? Start with Larry's guide
+
+[how.nixfred.com](https://how.nixfred.com) walks your agent through building your own, in order. Free plus your subscription. In Claude Code, add the guide as a read-only MCP server:
+
+```bash
+claude mcp add --scope user --transport http how-nixfred https://how.nixfred.com/mcp
+```
+
+Don't trust it, [audit it](https://github.com/nixfred/how.nixfred.com-public).
+
 ## What you get
 
 | Component | What it does |
 |---|---|
 | **The Algorithm** | Every task moves from *current state* to a defined *ideal state*, with criteria you can verify |
 | **Memory + TELOS** | Goals, people, preferences and past decisions, available without re-explaining |
-| **Skills** | 56 bundled skills: research, security, writing, art, first principles, red teaming and more |
-| **Hooks** | 56 lifecycle hooks: security guards, integrity checks, context loading, learning capture |
+| **Skills** | Bundled skills: research, security, writing, art, first principles, red teaming and more |
+| **Hooks** | Lifecycle hooks: security guards, integrity checks, context loading, learning capture |
 | **Pulse** | Local dashboard and observability for what your AI is doing |
 | **Status line** | Neon 5-line cockpit: context, git, memory, plan pace (banked, never dollars), local GPU and weather. Adapts to pane size |
 | **Mod** | [`nixfredos-laws`](nixfredOS/install/skills/nixfredos-laws/), a Claude Code mod: a band above the prompt that counts failed commands (three strikes, then research) and reads out the remote and its visibility before every commit and push |
