@@ -52,7 +52,7 @@ Then tell your AI coding assistant: `Read nixfredOS/INSTALL.md and install nixfr
 | **Hooks** | Lifecycle hooks: security guards, integrity checks, context loading, learning capture |
 | **Pulse** | Local dashboard and observability for what your AI is doing |
 | **Status line** | Neon 5-line cockpit: context, git, memory, plan pace (banked, never dollars), local GPU and weather. Adapts to pane size |
-| **Mod** | [`nixfredos-laws`](nixfredOS/install/skills/nixfredos-laws/), a Claude Code mod: a band above the prompt that keeps Larry's [Laws](https://larry.nixfred.com) in view while you work |
+| **Mod** | [`nixfredos-laws`](nixfredOS/install/skills/nixfredos-laws/), a Claude Code mod: a band above the prompt that counts failed commands (three strikes, then research) and reads out the remote and its visibility before every commit and push, part of Larry's [Laws](https://larry.nixfred.com) |
 | **Learning** | Ratings and outcomes feed back so the system improves itself |
 
 Browse the skills in [`nixfredOS/install/skills/`](nixfredOS/install/skills/) and the hooks in [`nixfredOS/install/hooks/`](nixfredOS/install/hooks/).
