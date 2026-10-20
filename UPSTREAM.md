@@ -1,6 +1,6 @@
 # Syncing with upstream
 
-nixfredOS is a fork of [LifeOS](https://github.com/danielmiessler/LifeOS) by Daniel Miessler, MIT licensed.
+Upstream: https://github.com/danielmiessler/LifeOS
 
 Nothing here syncs automatically, and nothing should. A sync is a manual job: fetch, merge on a branch, review, then open a pull request that a person reads. Never push to upstream.
 
