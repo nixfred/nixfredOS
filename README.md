@@ -23,7 +23,15 @@ Your harness is the engine. nixfredOS is the rest of the car.
 
 ## Install
 
-nixfredOS installs itself. Clone the repo, then hand the install guide to your AI:
+**Building your own AI from scratch?** Start where [nixfredos.com](https://nixfredos.com) starts you: the free, in-order guide at [how.nixfred.com](https://how.nixfred.com). It is about 20 hours of work, your AI does most of the typing, and you pick what to keep. In Claude Code, add the guide as a read-only MCP server:
+
+```bash
+claude mcp add --scope user --transport http how-nixfred https://how.nixfred.com/mcp
+```
+
+Then tell your AI: *"Use the how-nixfred MCP to plan my install and take me through it one step at a time. Ask me before you run anything."* No Claude Code yet? [Start at Chapter 0](https://how.nixfred.com/00-start-here). The MCP server's source and the exact tool list it sends are public at [nixfred/how.nixfred.com-public](https://github.com/nixfred/how.nixfred.com-public), so you can check the tools before you trust them.
+
+**Installing nixfredOS itself?** It installs itself. Clone the repo, then hand the install guide to your AI:
 
 ```bash
 git clone https://github.com/nixfred/nixfredOS.git
@@ -36,7 +44,7 @@ Then tell your AI coding assistant:
 Read nixfredOS/INSTALL.md and install nixfredOS for me.
 ```
 
-It walks the setup and asks before it touches anything on your machine. You need a coding harness that can read files and run commands (built and tested on [Claude Code](https://docs.claude.com/claude-code)) and [bun](https://bun.sh).
+It walks the setup and asks before it touches anything on your machine. You need a coding harness that can read files and run commands (built and tested on [Claude Code](https://code.claude.com/docs/en/overview)) and [bun](https://bun.sh).
 
 ## What you get
 
