@@ -25,22 +25,14 @@ Your harness is the engine. nixfredOS is the rest of the car.
 
 [how.nixfred.com](https://how.nixfred.com) walks your agent through building your own, in order. Free plus your subscription. Don't trust me, [audit it](https://github.com/nixfred/how.nixfred.com-public).
 
-The recipe box is the recipe, not the goal. Build it once, then hand your Larry any repo and build anything.
+The recipe box is the recipe, not the goal.
+Build it once, then hand your Larry any repo and build anything.
 
 The Laws Larry works by live at [larry.nixfred.com](https://larry.nixfred.com).
 
-<sub>You can do all of this yourself, free plus your subscription. If you want help with advanced work, I am available, and it is not free and not cheap: [book a call](https://calendly.com/nixfred).</sub>
+<sub>You can do all of this yourself, free plus your subscription. If you want help with advanced work, I am available, and it is not free and not cheap: [book a call](mailto:frednix@gmail.com).</sub>
 
-## Doing it by hand
-
-No guide needed. Clone the repo and hand the install guide to your AI:
-
-```bash
-git clone https://github.com/nixfred/nixfredOS.git
-cd nixfredOS
-```
-
-Then tell your AI coding assistant: `Read nixfredOS/INSTALL.md and install nixfredOS for me.` It asks before it touches anything on your machine. You need a coding harness that can read files and run commands (built and tested on [Claude Code](https://docs.claude.com/claude-code)) and [bun](https://bun.sh).
+Steps: https://how.nixfred.com
 
 ## What you get
 
