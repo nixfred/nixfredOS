@@ -83,7 +83,7 @@ The install is additive. It writes its own files and asks before each integratio
 ```
 nixfredOS/
 ├── README.md          you are here
-├── LICENSE            MIT (original, unmodified)
+├── LICENSE            MIT
 ├── images/            banner and diagrams
 ├── Releases/          versioned release snapshots
 └── nixfredOS/
@@ -94,8 +94,8 @@ nixfredOS/
 
 ## License
 
-MIT. See [LICENSE](LICENSE). The original license file is kept exactly as published upstream.
+MIT. See [LICENSE](LICENSE).
 
 ---
 
-<sub>nixfredOS is a fork of <a href="https://github.com/danielmiessler/LifeOS">LifeOS</a> by <a href="https://danielmiessler.com">Daniel Miessler</a>, used under the MIT License. Thanks to Daniel and the LifeOS contributors for the foundation.</sub>
+nixfredOS is a fork of LifeOS by Daniel Miessler, MIT licensed.
