@@ -11,7 +11,7 @@
 
 # nixfredOS
 
-🌐 **https://nixfredos.com**
+Start at https://nixfredos.com; the steps live at https://how.nixfred.com.
 
 **nixfredOS turns a general AI coding harness into a personal operating system.** It learns your goals, remembers your past sessions, routes each request to the right skill, and guards your machine with hooks that check every action before it runs.
 
@@ -21,36 +21,26 @@ Your harness is the engine. nixfredOS is the rest of the car.
   <img src="images/nixfredos-architecture.svg" width="100%" alt="Diagram: you talk to the nixfredOS layer (Algorithm, Memory and TELOS, Skills, Hooks, Pulse, Learning), which drives your AI harness" />
 </p>
 
-## Install
+## Start here
 
-nixfredOS installs itself. Clone the repo, then hand the install guide to your AI:
+[how.nixfred.com](https://how.nixfred.com) walks your agent through building your own, in order. Free plus your subscription. Don't trust me, [audit it](https://github.com/nixfred/how.nixfred.com-public).
+
+The recipe box is the recipe, not the goal. Build it once, then hand your Larry any repo and build anything.
+
+The Laws Larry works by live at [larry.nixfred.com](https://larry.nixfred.com).
+
+<sub>You can do all of this yourself, free plus your subscription. If you want help with advanced work, I am available, and it is not free and not cheap: [book a call](https://calendly.com/nixfred).</sub>
+
+## Doing it by hand
+
+No guide needed. Clone the repo and hand the install guide to your AI:
 
 ```bash
 git clone https://github.com/nixfred/nixfredOS.git
 cd nixfredOS
 ```
 
-Then tell your AI coding assistant:
-
-```
-Read nixfredOS/INSTALL.md and install nixfredOS for me.
-```
-
-It walks the setup and asks before it touches anything on your machine. You need a coding harness that can read files and run commands (built and tested on [Claude Code](https://docs.claude.com/claude-code)) and [bun](https://bun.sh).
-
-### New to this? Start with Larry's guide
-
-[how.nixfred.com](https://how.nixfred.com) walks your agent through building your own, in order. Free plus your subscription. In Claude Code, add the guide as a read-only MCP server:
-
-```bash
-claude mcp add --scope user --transport http how-nixfred https://how.nixfred.com/mcp
-```
-
-Don't trust me, [audit it](https://github.com/nixfred/how.nixfred.com-public).
-
-The recipe box is the recipe, not the goal. Build it once, then hand your Larry any repo and build anything.
-
-<sub>You can do all of this yourself, free plus your subscription. If you want help with advanced work, I am available, and it is not free and not cheap: [book a call](https://calendly.com/nixfred).</sub>
+Then tell your AI coding assistant: `Read nixfredOS/INSTALL.md and install nixfredOS for me.` It asks before it touches anything on your machine. You need a coding harness that can read files and run commands (built and tested on [Claude Code](https://docs.claude.com/claude-code)) and [bun](https://bun.sh).
 
 ## What you get
 
@@ -62,7 +52,7 @@ The recipe box is the recipe, not the goal. Build it once, then hand your Larry 
 | **Hooks** | Lifecycle hooks: security guards, integrity checks, context loading, learning capture |
 | **Pulse** | Local dashboard and observability for what your AI is doing |
 | **Status line** | Neon 5-line cockpit: context, git, memory, plan pace (banked, never dollars), local GPU and weather. Adapts to pane size |
-| **Mod** | [`nixfredos-laws`](nixfredOS/install/skills/nixfredos-laws/), a Claude Code mod: a band above the prompt that counts failed commands (three strikes, then research) and reads out the remote and its visibility before every commit and push |
+| **Mod** | [`nixfredos-laws`](nixfredOS/install/skills/nixfredos-laws/), a Claude Code mod: a band above the prompt that keeps Larry's [Laws](https://larry.nixfred.com) in view while you work |
 | **Learning** | Ratings and outcomes feed back so the system improves itself |
 
 Browse the skills in [`nixfredOS/install/skills/`](nixfredOS/install/skills/) and the hooks in [`nixfredOS/install/hooks/`](nixfredOS/install/hooks/).
