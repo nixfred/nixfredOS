@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="images/nixfredos-banner.svg" width="100%" alt="nixfredOS: your AI, your context, your operating system" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/nixfred-logo.svg">
+    <img src="brand/nixfred-logo-light.svg" width="520" alt="nixfred" />
+  </picture>
 </p>
 
 <p align="center">
