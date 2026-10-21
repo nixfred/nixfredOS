@@ -1,5 +1,11 @@
 # nixfred brand standard
 
+> ## LOCKED as of 2026-10-20
+>
+> The master `nixfred-logo-master.png` and the set of files in this `brand/` folder are the **official nixfred brand standard**. **No changes go in without Fred's yes.** That covers the artwork, colors, file set and the rules below: no edits, recolors, replacements or additions without his explicit approval first.
+>
+> The stacked lockup (`nixfred-logo-stacked*`) is a layout of the same locked elements, the icon above the wordmark. It is not new artwork.
+
 The nixfred logo is a five-segment teal-to-mint hexagon with a `>_` prompt inside, next to a bold `nixfred` wordmark whose i-dot is a small glowing mint Larry face. These files are the source of truth. The SVGs are redrawn from the master lockup; the redraw matches it at PSNR 40.1 dB. Do not recolor, stretch, outline or re-typeset them. Use the files as shipped.
 
 <p align="center">
