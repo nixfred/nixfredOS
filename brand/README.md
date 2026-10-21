@@ -9,12 +9,18 @@ The nixfred logo is a five-segment teal-to-mint hexagon with a `>_` prompt insid
   </picture>
 </p>
 
+## The one rule: where Larry's face goes
+
+The Larry smiley face appears **only** as the dot on the `i` in the `nixfred` wordmark. It never goes inside the hexagon. The hexagon icon always shows just the `>_` prompt: white on dark backgrounds, `#0b1220` on light ones. That holds for every icon, favicon, app icon, avatar and lockup, and for anything new made from these files.
+
 ## Which file to use where
 
 | Need | File | Notes |
 |---|---|---|
 | Full lockup on a dark page | [`nixfred-logo.svg`](nixfred-logo.svg) | Transparent background, white wordmark and prompt. |
 | Full lockup on a light page | [`nixfred-logo-light.svg`](nixfred-logo-light.svg) | Same art with a dark wordmark and prompt (`#0b1220`). |
+| Stacked lockup, dark page | [`nixfred-logo-stacked.svg`](nixfred-logo-stacked.svg), [`nixfred-logo-stacked.png`](nixfred-logo-stacked.png) | Icon above the wordmark, for square or tall slots with room for the name. PNG is 1024 px wide, transparent. |
+| Stacked lockup, light page | [`nixfred-logo-stacked-light.svg`](nixfred-logo-stacked-light.svg), [`nixfred-logo-stacked-light.png`](nixfred-logo-stacked-light.png) | Same, dark wordmark and prompt. |
 | Icon only, dark page | [`nixfred-icon.svg`](nixfred-icon.svg) | Hexagon and `>_`, transparent, white prompt. |
 | Icon only, light page | [`nixfred-icon-light.svg`](nixfred-icon-light.svg) | Same with a dark prompt. |
 | Browser tab icon (vector) | [`nixfred-favicon.svg`](nixfred-favicon.svg) | Icon on a `#070707` rounded tile (corner radius 20% of the side). Works on light and dark tabs. |
@@ -76,6 +82,15 @@ The lockup and icons below switch with your GitHub theme: dark theme shows the d
 | Lockup | Icon | Favicon tile | Share card |
 |---|---|---|---|
 | <picture><source media="(prefers-color-scheme: dark)" srcset="nixfred-logo.svg"><img src="nixfred-logo-light.svg" width="220" alt="lockup"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="nixfred-icon.svg"><img src="nixfred-icon-light.svg" width="96" alt="icon"></picture> | <img src="nixfred-favicon.svg" width="96" alt="favicon tile"> | <img src="og.png" width="260" alt="share card"> |
+
+Stacked lockup (switches with your GitHub theme):
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="nixfred-logo-stacked.svg">
+    <img src="nixfred-logo-stacked-light.svg" width="260" alt="nixfred stacked lockup" />
+  </picture>
+</p>
 
 Dark page and light page, side by side as files:
 
