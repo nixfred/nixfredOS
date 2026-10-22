@@ -19,7 +19,7 @@
 # render never waits on the network or the GPU.
 #
 # Env knobs:
-#   NIXFREDOS_SL_WEATHER=off   hide location/time/weather (no network calls)
+#   NIXFREDOS_SL_WEATHER=on    show location/time/weather (IP geolocation via ip-api.com + open-meteo; off by default, no network calls)
 #   NIXFREDOS_SL_MODE=one|compact|full   force a layout
 #   NIXFREDOS_MEMORY_DB=path   memory database (default ~/.claude/memory.db)
 
@@ -267,7 +267,7 @@ fi
 
 # ── location / time / weather (cached; IP geolocation once a day) ───────────
 wx_seg=""
-if [ "$NIXFREDOS_SL_WEATHER" != "off" ]; then
+if [ "${NIXFREDOS_SL_WEATHER:-off}" = "on" ]; then
     LOC="$STATE_DIR/location-cache.json"; WX="$STATE_DIR/sl-weather.cache"
     if [ "$(age "$LOC")" -gt 86400 ]; then
         lj=$(curl -s --max-time 2 "http://ip-api.com/json/?fields=city,regionName,country,lat,lon" 2>/dev/null)
@@ -330,3 +330,4 @@ case "$MODE" in
         l5=$(join "$wx_seg" "$gpu_seg" "$extra_env" "$voice_seg"); [ -n "$l5" ] && printf '%s\n' "$l5"
         ;;
 esac
+exit 0
