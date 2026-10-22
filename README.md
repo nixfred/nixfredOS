@@ -46,7 +46,7 @@ Steps: https://how.nixfred.com
 | **Skills** | Bundled skills: research, security, writing, art, first principles, red teaming and more |
 | **Hooks** | Lifecycle hooks: security guards, integrity checks, context loading, learning capture |
 | **Pulse** | Local dashboard and observability for what your AI is doing |
-| **Status line** | Neon 5-line cockpit: context, git, memory, plan pace (banked, never dollars), local GPU and weather. Adapts to pane size |
+| **Status line** | Neon 5-line cockpit: context, git, memory, plan pace (banked, never dollars), local GPU and weather (opt-in). On by default at install, never replacing a status line you already have. Adapts to pane size |
 | **Mod** | [`nixfredos-laws`](nixfredOS/install/skills/nixfredos-laws/), a Claude Code mod: a band above the prompt that counts failed commands (three strikes, then research) and reads out the remote and its visibility before every commit and push, part of Larry's [Laws](https://larry.nixfred.com) |
 | **Learning** | Ratings and outcomes feed back so the system improves itself |
 
