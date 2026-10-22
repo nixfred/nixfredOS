@@ -416,6 +416,32 @@ fi
 PLACEMENT_DONE=1
 success "nixfredOS skill placed at ${TARGET/#$HOME/~}"
 
+# Status bar on by default: only when no statusLine is set (never replaces the
+# user's own), settings.json backed up first, merged with jq so no other key changes.
+SL_SRC="$TARGET/install/NIXFREDOS/NIXFREDOS_StatusLine.sh"
+CFG_ROOT="$(dirname "$NIXFREDOS_SKILLS_DIR")"
+SL_DST="$CFG_ROOT/NIXFREDOS/NIXFREDOS_StatusLine.sh"
+SETTINGS="$CFG_ROOT/settings.json"
+if [ "$DRY_RUN" = "1" ]; then
+  echo "  [DRY-RUN] wire settings.json statusLine -> $SL_DST (only if none is set)"
+elif [ -f "$SL_SRC" ] && command -v jq >/dev/null 2>&1; then
+  mkdir -p "$(dirname "$SL_DST")"
+  [ -f "$SL_DST" ] || cp "$SL_SRC" "$SL_DST"
+  chmod +x "$SL_DST"
+  [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+  if jq -e '.statusLine' "$SETTINGS" >/dev/null 2>&1; then
+    info "statusLine already set in ${SETTINGS/#$HOME/~}: keeping yours"
+  else
+    cp "$SETTINGS" "$SETTINGS.nixfredos-backup-$(date +%s)"
+    SL_CMD="$SL_DST"; case "$SL_CMD" in "$HOME"/*) SL_CMD="\$HOME/${SL_CMD#"$HOME"/}";; esac
+    if jq --arg c "$SL_CMD" '.statusLine = {type:"command", command:$c, refreshInterval:5}' "$SETTINGS" > "$SETTINGS.tmp"; then
+      mv "$SETTINGS.tmp" "$SETTINGS"; success "Status bar on (statusLine -> $SL_CMD)"
+    else
+      rm -f "$SETTINGS.tmp"; warn "Could not wire the status bar (settings.json is not valid JSON?): left it unchanged"
+    fi
+  fi
+fi
+
 # Interceptor verification captures must never ride into a user's backup commit
 # (public issue #1566, @xmasyx): keeping the config root under git with a private
 # remote is common, and captures can contain authenticated pages. Name-anchored,
