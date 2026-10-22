@@ -189,6 +189,10 @@ function deployStatusline(ctx: Ctx): ComponentResult {
     }
     const current = settings.statusLine as Record<string, unknown> | undefined;
     const alreadyWired = current?.command === command;
+    if (current && !alreadyWired && !process.argv.includes("--replace-statusline")) {
+      r.blockers.push(`settings.json already has a statusLine (${String(current.command ?? "").slice(0, 80)}): keeping it. Re-run with --replace-statusline to use nixfredOS's.`);
+      return r;
+    }
     if (!alreadyWired) {
       backup(settingsPath);
       // ported from public PR #1772, @asdf8675309; value adapted to 5 — a 1s
