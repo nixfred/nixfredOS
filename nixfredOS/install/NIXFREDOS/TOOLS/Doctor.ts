@@ -317,12 +317,17 @@ const CAPS: CapSpec[] = [
     configured: () => true, // every install must have run substitution
     probeOffline: async () => {
       try {
-        const { checkSurvivingPlaceholders } = await import(join(CONFIG_ROOT, 'skills', 'nixfredOS', 'Tools', 'InstallEngine.ts'));
-        const roots = [
-          join(CONFIG_ROOT, 'hooks'), join(CONFIG_ROOT, 'commands'), join(CONFIG_ROOT, 'agents'),
-          join(NIXFREDOS_DIR, 'ALGORITHM'), join(NIXFREDOS_DIR, 'NIXFREDOS_SYSTEM_PROMPT.md'),
-          join(CONFIG_ROOT, 'CLAUDE.md'), join(CONFIG_ROOT, 'settings.json'),
-        ];
+        const engine = await import(join(CONFIG_ROOT, 'skills', 'nixfredOS', 'Tools', 'InstallEngine.ts'));
+        const { checkSurvivingPlaceholders } = engine;
+        // One list of roots, shared with RenderIdentity.ts (the fixer), so the check and the fix cannot drift.
+        // An older InstallEngine without identityRoots gets the same seven roots spelled out here.
+        const roots: string[] = typeof engine.identityRoots === 'function'
+          ? engine.identityRoots(CONFIG_ROOT, NIXFREDOS_DIR)
+          : [
+            join(CONFIG_ROOT, 'hooks'), join(CONFIG_ROOT, 'commands'), join(CONFIG_ROOT, 'agents'),
+            join(NIXFREDOS_DIR, 'ALGORITHM'), join(NIXFREDOS_DIR, 'NIXFREDOS_SYSTEM_PROMPT.md'),
+            join(CONFIG_ROOT, 'CLAUDE.md'), join(CONFIG_ROOT, 'settings.json'),
+          ];
         let total = 0;
         const sites: Array<{ file: string; placeholder: string }> = [];
         for (const root of roots) {
@@ -337,7 +342,7 @@ const CAPS: CapSpec[] = [
         return { ok: true, detail: `check unavailable (${String(e).split('\n')[0]}) — InstallEngine not present on this tree` };
       }
     },
-    fixCmd: 'bun -e \'import {substituteTree} from "<configRoot>/skills/nixfredOS/Tools/InstallEngine.ts"; ...\' — re-run Setup.md step 9d substitution',
+    fixCmd: 'bun <configRoot>/skills/nixfredOS/Tools/RenderIdentity.ts --da "<AI name>" --principal "<your first name>" --apply — Setup.md step 9d (dry run without --apply)',
   },
   {
     id: 'shadow-home',

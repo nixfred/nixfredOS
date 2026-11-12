@@ -25,7 +25,7 @@
 import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, symlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
-import { copyMissing, detectDevTree } from "./InstallEngine";
+import { copyMissing, detectDevTree, identityStatus } from "./InstallEngine";
 
 // Runtime top-level entries this tool does NOT deploy:
 //  - USER           shipped separately as a scaffold (ScaffoldUser) + symlinked (LinkUser)
@@ -400,6 +400,9 @@ function main(): void {
     notes.push(`⚠️ ${skillConflicts.length} skill(s) NOT deployed — case-insensitive name collision with pre-existing skills (see skillConflicts). SURFACE THIS TO THE USER: their dirs were left untouched, and the colliding nixfredOS skills are not installed until resolved.`);
   }
   if (!apply) notes.push("dry-run — re-run with --apply to deploy (a blocked source fails the run in both modes)");
+  // The by-hand Core path never runs Setup.md step 9(d); say so now instead of finishing green and leaving Doctor red.
+  const identity = apply && ok ? identityStatus(configRoot) : undefined;
+  if (identity && !identity.rendered) notes.push(`identity not rendered yet (${identity.survivors} placeholders): after the hooks are in, run: ${identity.next}`);
 
   console.log(JSON.stringify({
     ok,
@@ -414,6 +417,7 @@ function main(): void {
     blockers,
     failures,
     results,
+    identity,
     note: notes.length > 0 ? notes.join(" | ") : undefined,
   }, null, 2));
   process.exit(ok ? 0 : 1);

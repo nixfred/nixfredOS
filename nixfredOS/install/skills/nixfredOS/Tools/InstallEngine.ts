@@ -519,6 +519,39 @@ export function checkSurvivingPlaceholders(rootDir: string): {
 }
 
 /**
+ * The model-facing surfaces whose identity placeholders must be rendered, for one config root.
+ *
+ * ONE list, shared by Doctor's `identity-placeholders` probe (what is CHECKED) and `RenderIdentity.ts`
+ * (what is RENDERED), so the fixer and the check can never drift apart. It is deliberately not the whole
+ * config root: a whole-tree `substituteTree` would also rewrite the `IDENTITY_PLACEHOLDERS` list above (so
+ * the check could never go green again) and the redistribution payload under skills/nixfredOS/install,
+ * which hold these tokens legitimately.
+ */
+export function identityRoots(configRoot: string, nixfredosDir: string = join(configRoot, "NIXFREDOS")): string[] {
+  return [
+    join(configRoot, "hooks"), join(configRoot, "commands"), join(configRoot, "agents"),
+    join(nixfredosDir, "ALGORITHM"), join(nixfredosDir, "NIXFREDOS_SYSTEM_PROMPT.md"),
+    join(configRoot, "CLAUDE.md"), join(configRoot, "settings.json"),
+  ];
+}
+
+/**
+ * Is the identity rendered on this config root? Verification only, used by the deploy tools to say so
+ * plainly instead of finishing green and leaving Doctor red afterwards (the by-hand Core path never runs
+ * Setup.md step 9(d) on its own). `next` is the exact command to run.
+ */
+export function identityStatus(configRoot: string, nixfredosDir?: string): { rendered: boolean; survivors: number; next?: string } {
+  let survivors = 0;
+  for (const root of identityRoots(configRoot, nixfredosDir)) survivors += checkSurvivingPlaceholders(root).total;
+  if (survivors === 0) return { rendered: true, survivors: 0 };
+  return {
+    rendered: false,
+    survivors,
+    next: `bun ${join(configRoot, "skills", "nixfredOS", "Tools", "RenderIdentity.ts")} --da "<the AI's name>" --principal "<your human's first name>" --apply`,
+  };
+}
+
+/**
  * Establish the system/user separation contract: the live `<configRoot>/NIXFREDOS/USER`
  * becomes a SYMLINK to `<configDir>/USER` (the private user-data home). Copies any
  * live USER content into the data home first (existsSync-guarded), then replaces

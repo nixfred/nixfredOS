@@ -18,7 +18,7 @@ import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync,
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { detectDevTree, mergeHooks } from "./InstallEngine";
+import { detectDevTree, identityStatus, mergeHooks } from "./InstallEngine";
 import { atomicWriteText } from "./lib/atomic-write";
 
 interface Args { configRoot: string; skillRoot: string; apply: boolean; allowDev: boolean; }
@@ -153,7 +153,10 @@ function main(): void {
     reconcile = `Doctor.ts not found at ${doctorPath} — hooks copied but not reconciled`;
   }
 
-  console.log(JSON.stringify({ ...report, written: true, backup, hookFilesCopied, skippedExisting, unwired, reconcile }, null, 2));
+  // The hook files carry the identity tokens; the by-hand Core path never renders them (Setup.md step 9(d)).
+  const identity = identityStatus(configRoot);
+  const identityNote = identity.rendered ? undefined : `identity not rendered yet (${identity.survivors} placeholders): run: ${identity.next}`;
+  console.log(JSON.stringify({ ...report, written: true, backup, hookFilesCopied, skippedExisting, unwired, reconcile, identity, identityNote }, null, 2));
   process.exit(0);
 }
 
